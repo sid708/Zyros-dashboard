@@ -716,7 +716,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
             <!-- SEARCH TAB -->
             <div id="music-tab-search" style="display:flex;flex-direction:column;gap:8px;flex:1;overflow:hidden">
               <div class="music-search-wrap">
-                <input class="music-search-inp" id="music-search-inp" placeholder="Search Spotify — songs, artists, albums…" onkeydown="if(event.key==='Enter')debugSpotifyToken()"/>
+                <input class="music-search-inp" id="music-search-inp" placeholder="Search Spotify — songs, artists, albums…" onkeydown="if(event.key==='Enter')spotifySearch()"/>
                 <div class="music-search-btn" onclick="spotifySearch()">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="#1ed760" style="display:inline;margin-right:4px;vertical-align:middle"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
                   SEARCH
@@ -994,10 +994,35 @@ function clearLogs(){logs=[];renderLogs();}
 // ════════════════════════════════════════
 //  WEBSOCKET / PI CONNECTION
 // ════════════════════════════════════════
-const isNgrok=ip.includes('ngrok-free.app')||ip.includes('ngrok.io')||ip.includes('ngrok.app');
-const wsProtocol=window.location.protocol==='https:'?'wss://':'ws://';
-const wsUrl=isNgrok ? wsProtocol+ip+'/ws' : wsProtocol+ip+':5000/ws';
-ws=new WebSocket(wsUrl);
+async function spotifySearch(){
+  const q=document.getElementById('music-search-inp').value.trim();
+  if(!q){showToast('Enter a search term');return;}
+  const list=document.getElementById('music-track-list');
+  list.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--text3)">Searching Spotify…</div>';
+  const data=await spApi('/search?q='+encodeURIComponent(q)+'&type=track&limit=10');
+  if(!data){list.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--red)">Search failed — check Activity Log for details</div>';return;}
+  const tracks=data.tracks?.items||[];
+  if(!tracks.length){list.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--text3)">No results found</div>';return;}
+  list.innerHTML=tracks.map((t,i)=>renderSpotifyTrackItem(t,i)).join('');
+  addLog('Search: '+q+' → '+tracks.length+' results','info');
+}
+
+function renderSpotifyTrackItem(t,i){
+  const artUrl=t.album?.images?.[2]?.url||t.album?.images?.[0]?.url||'';
+  const artists=(t.artists||[]).map(a=>a.name).join(', ');
+  const dur=formatMsTime(t.duration_ms||0);
+  const artHtml=artUrl?`<img src="${artUrl}" alt="" style="width:100%;height:100%;border-radius:7px;object-fit:cover">`:'🎵';
+  const isCurrentlyPlaying=spCurrentlyPlaying?.item?.id===t.id;
+  return `<div class="track-item ${isCurrentlyPlaying?'playing':''}" onclick="spotifyPlayTrack('${t.uri}')">
+    <div class="track-num">${isCurrentlyPlaying?'<div class="eq-bar"><div class="eq-b" style="--d:.4s"></div><div class="eq-b" style="--d:.6s"></div><div class="eq-b" style="--d:.3s"></div></div>':String(i+1).padStart(2,'00')}</div>
+    <div class="track-art">${artHtml}</div>
+    <div class="track-info">
+      <div class="track-name">${t.name}</div>
+      <div class="track-meta">${artists} · ${t.album?.name||'—'}</div>
+    </div>
+    <div class="track-dur">${dur}</div>
+  </div>`;
+}
 
 function connect(){
   const ip=document.getElementById('set-ip').value.trim();
