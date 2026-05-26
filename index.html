@@ -467,8 +467,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <div class="conn-info">
           <div class="conn-status" id="conn-label">OFFLINE</div>
           <div class="conn-ip-row">
-            <input class="hdr-ip" id="set-ip"value="fc9c-2405-201-1e-3816-669a-451d-102e-d718.ngrok-free.app" placeholder="Pi IP" style="pointer-events:all;cursor:text;position:relative;z-index:200"/>
-<div class="hdr-connect" onclick="reconnect()" style="pointer-events:all;cursor:pointer;position:relative;z-index:200">LINK</div>
+            <input class="hdr-ip" id="set-ip" value="amani-monopetalous-pleasedly.ngrok-free.dev"
           </div>
         </div>
       </div>
@@ -846,7 +845,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
       <div>
         <div class="sgroup">
           <div class="sgroup-title">NETWORK</div>
-          <div class="srow"><div><div class="srow-lbl">Pi IP Address</div><div class="srow-desc">Raspberry Pi local network IP</div></div><input class="sinp" id="settings-ip" value="fc9c-2405-201-1e-3816-669a-451d-102e-d718.ngrok-free.app"/></div>
+          <div class="srow"><div><div class="srow-lbl">Pi IP Address</div><div class="srow-desc">Raspberry Pi local network IP</div></div><input class="sinp" id="settings-ip" value="amani-monopetalous-pleasedly.ngrok-free.dev"/></div>
           <div class="srow"><div><div class="srow-lbl">WebSocket Port</div><div class="srow-desc">Default 5000</div></div><input class="sinp" id="settings-port" value="5000" type="number" style="max-width:80px"/></div>
           <div class="srow"><div><div class="srow-lbl">Auto-Connect</div><div class="srow-desc">Reconnect on startup</div></div><button class="tog" id="tog-autoconn"></button></div>
         </div>
@@ -1025,13 +1024,14 @@ function renderSpotifyTrackItem(t,i){
 }
 
 function connect(){
-  const ip=document.getElementById('set-ip').value.trim();
+  const ip=document.getElementById('set-ip').value.trim().replace(/^https?:\/\//,'').replace(/^wss?:\/\//,'').replace(/\/ws\/?$/,'');
   if(!ip)return;
   addLog('Connecting → '+ip,'info');
   try{
     const isNgrok=ip.includes('ngrok-free.app')||ip.includes('ngrok.io')||ip.includes('ngrok.app');
     const wsProtocol=window.location.protocol==='https:'?'wss://':'ws://';
-    const wsUrl=isNgrok?wsProtocol+ip+'/ws':wsProtocol+ip+':5000/ws';
+    const cleanIp=ip.replace(/\/ws\/?$/,'');
+const wsUrl=isNgrok?wsProtocol+cleanIp+'/ws':wsProtocol+cleanIp+':5000/ws';
     ws=new WebSocket(wsUrl);
     ws.onopen=()=>{isConnected=true;setConn(true);addLog('Neural link established','ok');requestSystem();systemPollInterval=setInterval(requestSystem,5000);};
     ws.onmessage=(e)=>{try{const d=JSON.parse(e.data);if(d.type==='system')updateSystem(d.data);if(d.type==='bot_pos'){botPos={x:d.x,y:d.y};moveBotMarker(d.x,d.y);}if(d.type==='nav_start')showToast('Navigating…',1500);if(d.type==='nav_done')showToast('Target reached ✓',1500);if(d.type==='stopped')showToast('All motors halted',1000);if(d.type==='ai_display'){document.getElementById('ai-spinner').style.display='none';document.getElementById('ai-overlay-text').textContent=d.text;const el=document.getElementById('qa-feedback');if(el)el.textContent='🤖 '+d.text;}if(d.type==='song_list'){localSongs=d.songs.map(s=>typeof s==='object'?s.name:s);localDurations={};d.songs.forEach(s=>{if(s&&typeof s==='object'&&s.name)localDurations[s.name]=parseInt(s.duration)||0;});renderLocalTracks();}if(d.type==='connected'&&d.bot_pos)moveBotMarker(d.bot_pos.x,d.bot_pos.y);}catch(err){addLog('Parse error','err');}};
@@ -1206,7 +1206,7 @@ async function spApi(endpoint, method='GET', body=null) {
     const ok = await spotifyRefreshAccessToken();
     if (!ok) { showToast('Spotify session expired — please re-login'); return null; }
   }
-  const opts = { method, headers: { 'Authorization': 'Bearer ' + spAccessToken } };
+  const opts = { method, headers: { 'Authorization': 'Bearer ' + spAccessToken, 'ngrok-skip-browser-warning': 'true' } };
   if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
   try {
     const controller = new AbortController();
@@ -1622,8 +1622,8 @@ async function loadFlights(){const{lat,lon,radius}=getFlightSettings();const lam
 //  SETTINGS
 // ════════════════════════════════════════
 function saveSettings(){
-  const ip=document.getElementById('settings-ip').value.trim();
-  document.getElementById('set-ip').value=ip;
+  const ip=document.getElementById('settings-ip').value.trim().replace(/^https?:\/\//,'').replace(/^wss?:\/\//,'');
+document.getElementById('set-ip').value=ip;
   localStorage.setItem('groq_key',document.getElementById('ai-key').value);
   localStorage.setItem('zyros_ip',ip);
   localStorage.setItem('fr_lat',document.getElementById('fr-lat').value);
@@ -1642,7 +1642,7 @@ function saveSettings(){
 document.querySelectorAll('.tog').forEach(btn=>{btn.addEventListener('click',()=>btn.classList.toggle('off'));});
 function loadSavedSettings(){
   const key=localStorage.getItem('groq_key');if(key)document.getElementById('ai-key').value=key;
-  const ip=localStorage.getItem('zyros_ip');if(ip){document.getElementById('set-ip').value=ip;document.getElementById('settings-ip').value=ip;}
+  const ip=localStorage.getItem('zyros_ip');if(ip){document.getElementById('set-ip').value=ip;document.getElementById('settings-ip').value=ip;}else{document.getElementById('set-ip').value='amani-monopetalous-pleasedly.ngrok-free.dev';}
   const lat=localStorage.getItem('fr_lat');if(lat)document.getElementById('fr-lat').value=lat;
   const lon=localStorage.getItem('fr_lon');if(lon)document.getElementById('fr-lon').value=lon;
   const r=localStorage.getItem('fr_radius');if(r)document.getElementById('fr-radius').value=r;
