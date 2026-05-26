@@ -65,7 +65,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
 @keyframes mblink{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes ring-pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.5);opacity:0}}
 .mission-text{font-family:var(--font-mono);font-size:7px;letter-spacing:1.5px;color:var(--acc3)}
-.shell{width:100vw;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.shell{width:100vw;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden;isolation:isolate;}
 .statusbar{height:28px;flex-shrink:0;background:linear-gradient(180deg,#060618 0%,#04040e 100%);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:24px;position:relative;z-index:50;}
 .sb-item{display:flex;align-items:center;gap:6px}
 .sb-label{font-family:var(--font-mono);font-size:7px;letter-spacing:2px;color:var(--text3)}
@@ -74,7 +74,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
 .sb-divider{width:1px;height:14px;background:var(--border2)}
 .sb-ticker{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:1px;}
 .sb-ticker-dot{width:6px;height:6px;border-radius:50%;background:var(--acc2);animation:mblink 3s infinite}
-.page{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);overflow:hidden;background:var(--bg);z-index:10;}
+.page{position:absolute;top:100px;left:0;right:0;bottom:0;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);overflow:hidden;background:var(--bg);z-index:10;margin-top:0;}
 .page.active{transform:translateX(0)}
 .page.behind{transform:translateX(-40px);opacity:.6}
 #page-home{transform:translateX(0)}
@@ -84,8 +84,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
 .back-btn:active{background:rgba(0,212,255,.15)}
 .ptitle{font-family:var(--font-hud);font-size:11px;font-weight:700;letter-spacing:5px;color:var(--text2);position:absolute;left:50%;transform:translateX(-50%);text-transform:uppercase;}
 .ptopbar-right{position:absolute;right:16px;display:flex;align-items:center;gap:8px}
-.home-content{flex:1;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:16px 20px;overflow:hidden;gap:0}
-.menu-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:12px;width:100%;height:100%;}
+.home-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 20px;overflow:hidden;}
+.menu-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,140px);gap:10px;width:100%;}
 .mc{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:4px;cursor:pointer;position:relative;overflow:hidden;transition:all .2s;padding:16px;}
 .mc::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;}
 .mc:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.12)}
@@ -492,8 +492,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
     </div>
   </div>
 
-  <!-- HOME -->
-  <div class="page active" id="page-home">
+  <!-- STATUS STRIP -->
+  <div class="statusbar">
     <div class="home-content">
       <div class="menu-grid">
         <div class="mc cg" onclick="goTo('page-quickactions')">
@@ -842,7 +842,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
       <div>
         <div class="sgroup">
           <div class="sgroup-title">NETWORK</div>
-          <div class="srow"><div><div class="srow-lbl">Pi IP Address</div><div class="srow-desc">Raspberry Pi local network IP</div></div><input class="sinp" id="settings-ip" value="fc9c-2405-201-1e-3816-669a-451d-102e-d718.ngrok-free.app"/></div>
+          <div class="srow"><div><div class="srow-lbl">Pi IP Address</div><div class="srow-desc">Raspberry Pi local network IP</div></div><input class="sinp" id="settings-ip" value="192.168.29.195"/></div>
           <div class="srow"><div><div class="srow-lbl">WebSocket Port</div><div class="srow-desc">Default 5000</div></div><input class="sinp" id="settings-port" value="5000" type="number" style="max-width:80px"/></div>
           <div class="srow"><div><div class="srow-lbl">Auto-Connect</div><div class="srow-desc">Reconnect on startup</div></div><button class="tog" id="tog-autoconn"></button></div>
         </div>
@@ -1611,7 +1611,6 @@ async function loadFlights(){const{lat,lon,radius}=getFlightSettings();const lam
 // ════════════════════════════════════════
 function saveSettings(){
   const ip=document.getElementById('settings-ip').value.trim();
-  document.getElementById('set-ip').value=ip;
   localStorage.setItem('groq_key',document.getElementById('ai-key').value);
   localStorage.setItem('zyros_ip',ip);
   localStorage.setItem('fr_lat',document.getElementById('fr-lat').value);
@@ -1677,4 +1676,3 @@ window.addEventListener('load',async()=>{
 </script>
 </body>
 </html>
-        
