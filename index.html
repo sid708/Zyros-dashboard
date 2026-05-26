@@ -994,18 +994,6 @@ function clearLogs(){logs=[];renderLogs();}
 // ════════════════════════════════════════
 //  WEBSOCKET / PI CONNECTION
 // ════════════════════════════════════════
-async function spotifySearch(){
-  const q=document.getElementById('music-search-inp').value.trim();
-  if(!q){showToast('Enter a search term');return;}
-  const list=document.getElementById('music-track-list');
-  list.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--text3)">Searching Spotify…</div>';
-  const data=await spApi('/search?q='+encodeURIComponent(q)+'&type=track&limit=10');
-  if(!data){list.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--red)">Search failed — check Activity Log for details</div>';return;}
-  const tracks=data.tracks?.items||[];
-  if(!tracks.length){list.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--text3)">No results found</div>';return;}
-  list.innerHTML=tracks.map((t,i)=>renderSpotifyTrackItem(t,i)).join('');
-  addLog('Search: '+q+' → '+tracks.length+' results','info');
-}
 
 function renderSpotifyTrackItem(t,i){
   const artUrl=t.album?.images?.[2]?.url||t.album?.images?.[0]?.url||'';
