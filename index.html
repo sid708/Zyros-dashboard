@@ -83,8 +83,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
 .back-btn:active{background:rgba(0,212,255,.15)}
 .ptitle{font-family:var(--font-hud);font-size:11px;font-weight:700;letter-spacing:5px;color:var(--text2);position:absolute;left:50%;transform:translateX(-50%);text-transform:uppercase;}
 .ptopbar-right{position:absolute;right:16px;display:flex;align-items:center;gap:8px}
-.home-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px;overflow:hidden;gap:16px}
-.menu-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:12px;width:100%;flex:1;min-height:0;}
+.home-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px;overflow:auto;gap:16px}
+.menu-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;min-height:400px;}
 .mc{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:4px;cursor:pointer;position:relative;overflow:hidden;transition:all .2s;padding:16px;}
 .mc::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;}
 .mc:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.12)}
@@ -1017,9 +1017,8 @@ function connect(){
   if(!ip)return;
   addLog('Connecting → '+ip,'info');
   try{
-    const isNgrok=ip.includes('ngrok-free.app')||ip.includes('ngrok.io')||ip.includes('ngrok.app');
     const wsProtocol=window.location.protocol==='https:'?'wss://':'ws://';
-    const wsUrl=isNgrok?wsProtocol+ip+'/ws':wsProtocol+ip+':5000/ws';
+const wsUrl=wsProtocol+ip+':5000/ws';
     ws=new WebSocket(wsUrl);
     ws.onopen=()=>{isConnected=true;setConn(true);addLog('Neural link established','ok');requestSystem();systemPollInterval=setInterval(requestSystem,5000);};
     ws.onmessage=(e)=>{try{const d=JSON.parse(e.data);if(d.type==='system')updateSystem(d.data);if(d.type==='bot_pos'){botPos={x:d.x,y:d.y};moveBotMarker(d.x,d.y);}if(d.type==='nav_start')showToast('Navigating…',1500);if(d.type==='nav_done')showToast('Target reached ✓',1500);if(d.type==='stopped')showToast('All motors halted',1000);if(d.type==='ai_display'){document.getElementById('ai-spinner').style.display='none';document.getElementById('ai-overlay-text').textContent=d.text;const el=document.getElementById('qa-feedback');if(el)el.textContent='🤖 '+d.text;}if(d.type==='song_list'){localSongs=d.songs.map(s=>typeof s==='object'?s.name:s);localDurations={};d.songs.forEach(s=>{if(s&&typeof s==='object'&&s.name)localDurations[s.name]=parseInt(s.duration)||0;});renderLocalTracks();}if(d.type==='connected'&&d.bot_pos)moveBotMarker(d.bot_pos.x,d.bot_pos.y);}catch(err){addLog('Parse error','err');}};
