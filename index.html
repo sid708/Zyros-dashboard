@@ -6,7 +6,6 @@
 <title>ZYROS // ZENITH YIELD REACTIVE ORGANISM SYSTEM</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet"/>
 <style>
-
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
   --bg:#04040e;--bg2:#080820;--bg3:#0d0d28;--bg4:#131338;
@@ -1374,24 +1373,6 @@ async function spotifySearch(){
   list.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--text3)">Searching Spotify…</div>';
   const data = await spApi('/search?q='+encodeURIComponent(q)+'&type=track&limit=10');
   if(!data){list.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--red)">Search failed — check Activity Log for details</div>';return;}
-function renderSpotifyTrackItem(t,i){
-  const artUrl=t.album?.images?.[2]?.url||t.album?.images?.[0]?.url||'';
-  const artists=(t.artists||[]).map(a=>a.name).join(', ');
-  const dur=formatMsTime(t.duration_ms||0);
-  const artHtml=artUrl?`<img src="${artUrl}" alt="" style="width:100%;height:100%;border-radius:7px;object-fit:cover">`:'🎵';
-  const isCurrentlyPlaying=spCurrentlyPlaying?.item?.id===t.id;
-  return `<div class="track-item ${isCurrentlyPlaying?'playing':''}" onclick="spotifyPlayTrack('${t.uri}')">
-    <div class="track-num ${isCurrentlyPlaying?'':''}">
-      ${isCurrentlyPlaying?'<div class="eq-bar"><div class="eq-b" style="--d:.4s"></div><div class="eq-b" style="--d:.6s"></div><div class="eq-b" style="--d:.3s"></div></div>':String(i+1).padStart(2,'0')}
-    </div>
-    <div class="track-art">${artHtml}</div>
-    <div class="track-info">
-      <div class="track-name">${t.name}</div>
-      <div class="track-meta">${artists} · ${t.album?.name||'—'}</div>
-    </div>
-    <div class="track-dur">${dur}</div>
-  </div>`;
-}
 }
 
 // ════════════════════════════════════════
