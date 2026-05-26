@@ -77,7 +77,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
 .page.active{transform:translateX(0)}
 .page.behind{transform:translateX(-40px);opacity:.6}
 #page-home{transform:translateX(0)}
-.ptopbar{height:52px;flex-shrink:0;background:linear-gradient(180deg,var(--bg2),var(--bg));border-bottom:1px solid rgba(0,212,255,.1);display:flex;align-items:center;padding:0 20px;gap:14px;position:relative;}
+.ptopbar{height:52px;flex-shrink:0;background:linear-gradient(180deg,var(--bg2),var(--bg));border-bottom:1px solid rgba(0,212,255,.1);display:flex;align-items:center;padding:0 20px;gap:14px;position:relative;z-index:10;}
 .ptopbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c),var(--acc2),transparent);opacity:.25}
 .back-btn{display:flex;align-items:center;gap:6px;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:6px;color:var(--c3);padding:5px 12px;font-family:var(--font-mono);font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .15s;}
 .back-btn:active{background:rgba(0,212,255,.15)}
@@ -119,7 +119,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
 .page-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 .slabel{font-family:var(--font-mono);font-size:8px;letter-spacing:3px;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .slabel::after{content:'';flex:1;height:1px;background:var(--border)}
-.qa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.qa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;align-items:stretch;}
 .qa{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:28px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;}
 .qa::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .18s;background:linear-gradient(135deg,rgba(0,212,255,.06),transparent)}
 .qa:hover{transform:translateY(-2px);border-color:rgba(0,212,255,.2)}
@@ -446,7 +446,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
     <div class="hdr-hexbg"></div>
     <div class="hdr-left">
       <div class="hdr-logo-wrap">
-        <div class="hdr-logo">ZYROS</div>
+        <div class="hdr-logo" onclick="location.reload()" style="cursor:pointer">ZYROS</div>
         <div class="hdr-tagline">ZENITH YIELD REACTIVE ORGANISM SYSTEM</div>
       </div>
       <div class="hdr-version">v4.3.0</div>
@@ -458,19 +458,6 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <div class="hdr-stat-item"><div class="hsi-label">TEMP</div><div class="hsi-value ok" id="sb-temp">—</div></div>
         <div class="hdr-stat-item"><div class="hsi-label">DISK</div><div class="hsi-value info" id="sb-disk">—</div></div>
         <div class="hdr-stat-item"><div class="hsi-label">UPTIME</div><div class="hsi-value info" id="sb-uptime">—</div></div>
-      </div>
-      <div class="hdr-conn-area">
-        <div class="conn-ring">
-          <svg viewBox="0 0 36 36"><circle class="conn-ring-track" cx="18" cy="18" r="15"/><circle class="conn-ring-fill" id="conn-ring-fill" cx="18" cy="18" r="15"/></svg>
-          <div class="conn-dot-inner" id="conn-dot"></div>
-        </div>
-        <div class="conn-info">
-          <div class="conn-status" id="conn-label">OFFLINE</div>
-          <div class="conn-ip-row">
-            <input class="hdr-ip" id="set-ip"value="fc9c-2405-201-1e-3816-669a-451d-102e-d718.ngrok-free.app" placeholder="Pi IP" style="pointer-events:all;cursor:text;position:relative;z-index:200"/>
-<div class="hdr-connect" onclick="reconnect()" style="pointer-events:all;cursor:pointer;position:relative;z-index:200">LINK</div>
-          </div>
-        </div>
       </div>
     </div>
     <div class="hdr-right">
@@ -512,7 +499,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
           <div class="mc-label">NAV SYS</div><div class="mc-desc">WAYPOINTS · AUTOPILOT</div>
           <div class="mc-status"><div class="mc-status-dot" style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></div><span style="font-family:var(--font-mono);font-size:8px;color:var(--text2)">GPS SYNCING</span></div>
         </div>
-        <div class="mc ck" onclick="goTo('page-music')">
+        <div class="mc ck" onclick="musicMode='local';goTo('page-music')"></div>
           <div class="mc-glow"></div><div class="mc-line"></div>
           <div class="mc-icon-wrap">🎵</div><div class="mc-badge">MOD-03</div>
           <div class="mc-label">AUDIO SYS</div><div class="mc-desc">MUSIC · VOLUME · BT SPEAKER</div>
@@ -536,7 +523,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
           <div class="mc-label">CONFIG</div><div class="mc-desc">NETWORK · AI · SYSTEM</div>
           <div class="mc-status"><div class="mc-status-dot" style="background:var(--teal);box-shadow:0 0 6px var(--teal)"></div><span style="font-family:var(--font-mono);font-size:8px;color:var(--text2)">SAVED</span></div>
         </div>
-        <div class="mc cs" onclick="goTo('page-music')">
+        <div class="mc cs" onclick="musicMode='spotify';goTo('page-music')"></div>
           <div class="mc-glow"></div><div class="mc-line"></div>
           <div class="mc-icon-wrap">🎧</div><div class="mc-badge">MOD-07</div>
           <div class="mc-label">RASPOTIFY</div><div class="mc-desc">SPOTIFY · SEARCH · STREAM</div>
@@ -564,7 +551,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <div class="qa" onclick="quickAction('WAVE','Wave')"><div class="qa-hotkey">F1</div><div class="qa-icon">👋</div><div class="qa-label">WAVE</div><div class="qa-desc">Friendly wave gesture</div></div>
         <div class="qa" onclick="quickAction('GOTO_HOME','Return to Base')"><div class="qa-hotkey">F2</div><div class="qa-icon">🏠</div><div class="qa-label">RETURN BASE</div><div class="qa-desc">Autonomous dock sequence</div></div>
         <div class="qa" onclick="askWhatIsThis()"><div class="qa-hotkey">F3</div><div class="qa-icon">🔍</div><div class="qa-label">WHAT IS THIS?</div><div class="qa-desc">AI vision — identify object in front of ZYROS</div></div>
-        <div class="qa" onclick="quickAction('DANCE','Dance Sequence')"><div class="qa-hotkey">F4</div><div class="qa-icon">💃</div><div class="qa-label">DANCE</div><div class="qa-desc">Play dance animation sequence</div></div>
+        <div class="qa" onclick="quickAction('OPEN_COMPARTMENT','Open Compartment')"><div class="qa-hotkey">F4</div><div class="qa-icon">🗃️</div><div class="qa-label">OPEN COMPARTMENT</div><div class="qa-desc">Release servo latch via Arduino</div></div>
         <div class="qa" onclick="askRandomPhrase()">
   <div class="qa-hotkey">F5</div>
   <div class="qa-icon">🧠</div>
@@ -954,7 +941,7 @@ let spActiveDevice=null;
 let spShuffle=false;
 let spRepeat='off';
 let spPlaybackPollTimer=null;
-let spMusicMode='spotify'; // 'spotify' | 'local'
+let musicMode='local';
 let spCurrentTab='search';
 
 // ════════════════════════════════════════
@@ -1013,7 +1000,7 @@ function renderSpotifyTrackItem(t,i){
 }
 
 function connect(){
-  const ip=document.getElementById('set-ip').value.trim();
+  const ip=document.getElementById('settings-ip').value.trim();
   if(!ip)return;
   addLog('Connecting → '+ip,'info');
   try{
@@ -1568,11 +1555,21 @@ function showSpotifyMainPanel(){
 }
 async function initMusicPage(){
   buildVisualizer();
+  if(musicMode==='local'){
+    if(spAccessToken&&Date.now()<spTokenExpiry){showSpotifyMainPanel();}
+    else if(spRefreshToken){const ok=await spotifyRefreshAccessToken();if(ok)showSpotifyMainPanel();else showSpotifySetupPanel();}
+    else{showSpotifySetupPanel();}
+    switchMusicTab('local');
+    loadLocalSongs();
+    return;
+  }
+  // spotify mode
   if(spAccessToken&&Date.now()<spTokenExpiry){
     showSpotifyMainPanel();
+    switchMusicTab('search');
   }else if(spRefreshToken){
     const ok=await spotifyRefreshAccessToken();
-    if(ok)showSpotifyMainPanel();
+    if(ok){showSpotifyMainPanel();switchMusicTab('search');}
     else showSpotifySetupPanel();
   }else{
     showSpotifySetupPanel();
@@ -1611,7 +1608,7 @@ function saveSettings(){
 document.querySelectorAll('.tog').forEach(btn=>{btn.addEventListener('click',()=>btn.classList.toggle('off'));});
 function loadSavedSettings(){
   const key=localStorage.getItem('groq_key');if(key)document.getElementById('ai-key').value=key;
-  const ip=localStorage.getItem('zyros_ip');if(ip){document.getElementById('set-ip').value=ip;document.getElementById('settings-ip').value=ip;}
+  const ip=localStorage.getItem('zyros_ip');if(ip){document.getElementById('settings-ip').value=ip;}
   const lat=localStorage.getItem('fr_lat');if(lat)document.getElementById('fr-lat').value=lat;
   const lon=localStorage.getItem('fr_lon');if(lon)document.getElementById('fr-lon').value=lon;
   const r=localStorage.getItem('fr_radius');if(r)document.getElementById('fr-radius').value=r;
