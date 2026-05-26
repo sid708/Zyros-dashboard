@@ -1157,6 +1157,7 @@ async function spotifyRefreshAccessToken(){
 }
 
 async function spApi(endpoint, method='GET', body=null) {
+  if(!spAccessToken){ showToast('Not logged in to Spotify'); return null; }
   if (Date.now() > spTokenExpiry) {
     const ok = await spotifyRefreshAccessToken();
     if (!ok) { showToast('Spotify session expired — please re-login'); return null; }
@@ -1164,7 +1165,10 @@ async function spApi(endpoint, method='GET', body=null) {
   const opts = { method, headers: { 'Authorization': 'Bearer ' + spAccessToken } };
   if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
   try {
-    const res = await fetch('https://api.spotify.com/v1' + endpoint, opts);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch('https://api.spotify.com/v1' + endpoint, { ...opts, signal: controller.signal });
+    clearTimeout(timeout);
     if (res.status === 204 || res.status === 202) return { ok: true };
     if (res.status === 401) {
       const ok = await spotifyRefreshAccessToken();
@@ -1175,13 +1179,22 @@ async function spApi(endpoint, method='GET', body=null) {
     const txt = await res.text();
     const parsed = txt ? JSON.parse(txt) : null;
     if (!res.ok) {
-      const msg = parsed?.error?.message || res.status;
+      const msg = parsed?.error?.message || ('HTTP ' + res.status);
       addLog('Spotify API ' + msg, 'err');
-      showToast('Spotify: ' + msg);
+      showToast('Spotify error: ' + msg);
       return null;
     }
     return parsed;
-  } catch(e) { addLog('Spotify API error: ' + e.message, 'err'); return null; }
+  } catch(e) {
+    if(e.name === 'AbortError'){
+      showToast('Spotify request timed out — check connection');
+      addLog('Spotify timeout: ' + endpoint, 'err');
+    } else {
+      addLog('Spotify API error: ' + e.message, 'err');
+      showToast('Spotify error: ' + e.message);
+    }
+    return null;
+  }
 }
 
 // ════════════════════════════════════════
@@ -1303,6 +1316,7 @@ async function spotifySearch(){
   const list=document.getElementById('music-track-list');
   list.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--text3)">Searching Spotify…</div>';
   const data = await spApi('/search?q='+encodeURIComponent(q)+'&type=track&limit=10');
+  if(!data){list.innerHTML='<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--red)">Search failed — check Activity Log for details</div>';return;}
 function renderSpotifyTrackItem(t,i){
   const artUrl=t.album?.images?.[2]?.url||t.album?.images?.[0]?.url||'';
   const artists=(t.artists||[]).map(a=>a.name).join(', ');
