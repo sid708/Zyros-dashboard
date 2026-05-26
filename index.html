@@ -24,7 +24,7 @@
 html,body{width:100%;height:100%;background:var(--bg);color:var(--text);overflow:hidden;font-family:var(--font-ui)}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 50% at 20% 0%,rgba(0,212,255,0.04) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,rgba(124,58,237,0.05) 0%,transparent 60%);}
 body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(to bottom,transparent 0,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 3px);}
-.header{height:72px;flex-shrink:0;background:linear-gradient(180deg,#0a0a22 0%,#070718 100%);border-bottom:1px solid rgba(0,212,255,0.12);display:flex;align-items:center;position:relative;overflow:hidden;z-index:100;}
+.header{height:72px;flex-shrink:0;background:linear-gradient(180deg,#0a0a22 0%,#070718 100%);border-bottom:1px solid rgba(0,212,255,0.12);display:flex;align-items:center;position:relative;overflow:visible;z-index:100;}
 .header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,var(--c) 20%,var(--acc2) 50%,var(--c) 80%,transparent 100%);opacity:.7;}
 .header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(0,212,255,.2) 30%,rgba(168,85,247,.2) 70%,transparent 100%);}
 .hdr-hexbg{position:absolute;inset:0;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='52' viewBox='0 0 60 52'%3E%3Cpath d='M0 26L15 0h30l15 26-15 26H15z' fill='none' stroke='%2300d4ff' stroke-width='1'/%3E%3C/svg%3E");background-size:60px 52px;}
@@ -467,8 +467,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <div class="conn-info">
           <div class="conn-status" id="conn-label">OFFLINE</div>
           <div class="conn-ip-row">
-            <input class="hdr-ip" id="set-ip" value="fc9c-2405-201-1e-3816-669a-451d-102e-d718.ngrok-free.app" placeholder="Pi IP"/>
-            <div class="hdr-connect" onclick="reconnect()">LINK</div>
+            <input class="hdr-ip" id="set-ip"value="fc9c-2405-201-1e-3816-669a-451d-102e-d718.ngrok-free.app" placeholder="Pi IP" style="pointer-events:all;cursor:text;position:relative;z-index:200"/>
+<div class="hdr-connect" onclick="reconnect()" style="pointer-events:all;cursor:pointer;position:relative;z-index:200">LINK</div>
           </div>
         </div>
       </div>
