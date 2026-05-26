@@ -460,7 +460,15 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
       </div>
       <div id="conn-label" style="font-family:var(--font-hud);font-size:10px;letter-spacing:3px;color:var(--red);transition:color .4s;white-space:nowrap">OFFLINE</div>
     </div>
-    <div class="hdr-center">function setConn(state){const dot=document.getElementById('conn-dot'),lbl=document.getElementById('conn-label'),ring=document.getElementById('conn-ring-fill');if(state){dot.classList.add('on');lbl.textContent='ONLINE';lbl.classList.add('on');if(ring)ring.classList.add('on');}else{dot.classList.remove('on');lbl.textContent='OFFLINE';lbl.classList.remove('on');if(ring)ring.classList.remove('on');}}
+    <div class="hdr-center">
+      <div class="hdr-stat-group">
+        <div class="hdr-stat-item"><div class="hsi-label">CPU</div><div class="hsi-value ok" id="sb-cpu">—</div></div>
+        <div class="hdr-stat-item"><div class="hsi-label">MEM</div><div class="hsi-value ok" id="sb-mem">—</div></div>
+        <div class="hdr-stat-item"><div class="hsi-label">TEMP</div><div class="hsi-value ok" id="sb-temp">—</div></div>
+        <div class="hdr-stat-item"><div class="hsi-label">DISK</div><div class="hsi-value info" id="sb-disk">—</div></div>
+        <div class="hdr-stat-item"><div class="hsi-label">UPTIME</div><div class="hsi-value info" id="sb-uptime">—</div></div>
+      </div>
+    </div>
     <div class="hdr-right">
       <div class="hdr-time" id="hdr-time">00:00:00</div>
       <div class="hdr-date" id="hdr-date">01 JAN 2025</div>
