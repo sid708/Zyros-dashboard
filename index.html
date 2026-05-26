@@ -84,8 +84,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
 .back-btn:active{background:rgba(0,212,255,.15)}
 .ptitle{font-family:var(--font-hud);font-size:11px;font-weight:700;letter-spacing:5px;color:var(--text2);position:absolute;left:50%;transform:translateX(-50%);text-transform:uppercase;}
 .ptopbar-right{position:absolute;right:16px;display:flex;align-items:center;gap:8px}
-.home-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 24px 16px 24px;overflow-y:auto;overflow:hidden;gap:16px}
-.menu-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:12px;width:100%;max-height:calc(100vh - 140px);}
+.home-content{flex:1;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:16px 20px;overflow:hidden;gap:0}
+.menu-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:12px;width:100%;height:100%;}
 .mc{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:4px;cursor:pointer;position:relative;overflow:hidden;transition:all .2s;padding:16px;}
 .mc::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s;}
 .mc:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.12)}
@@ -453,13 +453,6 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
       </div>
       <div class="hdr-version">v4.3.0</div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;padding:0 16px;flex-shrink:0;border-right:1px solid rgba(0,212,255,.08);height:100%">
-      <div style="position:relative;width:18px;height:18px;flex-shrink:0">
-        <div id="conn-dot" style="width:10px;height:10px;border-radius:50%;background:var(--red);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 8px var(--red);transition:all .4s;z-index:1"></div>
-        <div id="conn-ring" style="position:absolute;inset:-3px;border-radius:50%;border:1.5px solid var(--red);animation:ring-pulse 2s infinite;transition:border-color .4s"></div>
-      </div>
-      <div id="conn-label" style="font-family:var(--font-hud);font-size:10px;letter-spacing:3px;color:var(--red);transition:color .4s;white-space:nowrap">OFFLINE</div>
-    </div>
     <div class="hdr-center">
       <div class="hdr-stat-group">
         <div class="hdr-stat-item"><div class="hsi-label">CPU</div><div class="hsi-value ok" id="sb-cpu">—</div></div>
@@ -468,6 +461,13 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <div class="hdr-stat-item"><div class="hsi-label">DISK</div><div class="hsi-value info" id="sb-disk">—</div></div>
         <div class="hdr-stat-item"><div class="hsi-label">UPTIME</div><div class="hsi-value info" id="sb-uptime">—</div></div>
       </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:0 16px;flex-shrink:0;border-left:1px solid rgba(0,212,255,.08);border-right:1px solid rgba(0,212,255,.08);height:100%">
+      <div style="position:relative;width:18px;height:18px;flex-shrink:0">
+        <div id="conn-dot" style="width:10px;height:10px;border-radius:50%;background:var(--red);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 0 8px var(--red);transition:all .4s;z-index:1"></div>
+        <div id="conn-ring" style="position:absolute;inset:-3px;border-radius:50%;border:1.5px solid var(--red);animation:ring-pulse 2s infinite;transition:border-color .4s"></div>
+      </div>
+      <div id="conn-label" style="font-family:var(--font-hud);font-size:10px;letter-spacing:3px;color:var(--red);transition:color .4s;white-space:nowrap">OFFLINE</div>
     </div>
     <div class="hdr-right">
       <div class="hdr-time" id="hdr-time">00:00:00</div>
@@ -1677,3 +1677,4 @@ window.addEventListener('load',async()=>{
 </script>
 </body>
 </html>
+        
