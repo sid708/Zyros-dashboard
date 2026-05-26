@@ -73,7 +73,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
 .sb-divider{width:1px;height:14px;background:var(--border2)}
 .sb-ticker{margin-left:auto;display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:1px;}
 .sb-ticker-dot{width:6px;height:6px;border-radius:50%;background:var(--acc2);animation:mblink 3s infinite}
-.page{position:absolute;top:100px;left:0;right:0;bottom:0;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);overflow:hidden;background:var(--bg);z-index:10;}
+.page{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);overflow:hidden;background:var(--bg);z-index:10;}
 .page.active{transform:translateX(0)}
 .page.behind{transform:translateX(-40px);opacity:.6}
 #page-home{transform:translateX(0)}
