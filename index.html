@@ -999,6 +999,21 @@ const wsProtocol=window.location.protocol==='https:'?'wss://':'ws://';
 const wsUrl=isNgrok ? wsProtocol+ip+'/ws' : wsProtocol+ip+':5000/ws';
 ws=new WebSocket(wsUrl);
 
+function connect(){
+  const ip=document.getElementById('set-ip').value.trim();
+  if(!ip)return;
+  addLog('Connecting → '+ip,'info');
+  try{
+    const isNgrok=ip.includes('ngrok-free.app')||ip.includes('ngrok.io')||ip.includes('ngrok.app');
+    const wsProtocol=window.location.protocol==='https:'?'wss://':'ws://';
+    const wsUrl=isNgrok?wsProtocol+ip+'/ws':wsProtocol+ip+':5000/ws';
+    ws=new WebSocket(wsUrl);
+    ws.onopen=()=>{isConnected=true;setConn(true);addLog('Neural link established','ok');requestSystem();systemPollInterval=setInterval(requestSystem,5000);};
+    ws.onmessage=(e)=>{try{const d=JSON.parse(e.data);if(d.type==='system')updateSystem(d.data);if(d.type==='bot_pos'){botPos={x:d.x,y:d.y};moveBotMarker(d.x,d.y);}if(d.type==='nav_start')showToast('Navigating…',1500);if(d.type==='nav_done')showToast('Target reached ✓',1500);if(d.type==='stopped')showToast('All motors halted',1000);if(d.type==='ai_display'){document.getElementById('ai-spinner').style.display='none';document.getElementById('ai-overlay-text').textContent=d.text;const el=document.getElementById('qa-feedback');if(el)el.textContent='🤖 '+d.text;}if(d.type==='song_list'){localSongs=d.songs.map(s=>typeof s==='object'?s.name:s);localDurations={};d.songs.forEach(s=>{if(s&&typeof s==='object'&&s.name)localDurations[s.name]=parseInt(s.duration)||0;});renderLocalTracks();}if(d.type==='connected'&&d.bot_pos)moveBotMarker(d.bot_pos.x,d.bot_pos.y);}catch(err){addLog('Parse error','err');}};
+    ws.onclose=()=>{isConnected=false;setConn(false);clearInterval(systemPollInterval);addLog('Link severed','err');};
+    ws.onerror=()=>{addLog('WebSocket error','err');};
+  }catch(e){addLog(e.message,'err');}
+}
 function reconnect(){if(ws){try{ws.close();}catch(e){}}setTimeout(connect,400);}
 function setConn(state){const dot=document.getElementById('conn-dot'),lbl=document.getElementById('conn-label'),ring=document.getElementById('conn-ring-fill');if(state){dot.classList.add('on');lbl.textContent='ONLINE';lbl.classList.add('on');if(ring)ring.classList.add('on');}else{dot.classList.remove('on');lbl.textContent='OFFLINE';lbl.classList.remove('on');if(ring)ring.classList.remove('on');}}
 function sendCmd(cmd){addLog('→ '+cmd,'info');if(ws&&isConnected)ws.send(JSON.stringify({type:'command',command:cmd}));else showToast('Not connected to Pi');}
