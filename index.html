@@ -844,6 +844,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <div class="sgroup">
           <div class="sgroup-title">NETWORK</div>
           <div class="srow"><div><div class="srow-lbl">Pi IP Address</div><div class="srow-desc">Raspberry Pi local network IP</div></div><input class="sinp" id="settings-ip" value="192.168.29.195"/></div>
+          <div class="srow"><div><div class="srow-lbl">Camera Stream IP</div><div class="srow-desc">mediamtx HLS stream IP:port</div></div><input class="sinp" id="settings-cam-ip" value="192.18.29.195:8888"/></div>
           <div class="srow"><div><div class="srow-lbl">WebSocket Port</div><div class="srow-desc">Default 5000</div></div><input class="sinp" id="settings-port" value="5000" type="number" style="max-width:80px"/></div>
           <div class="srow"><div><div class="srow-lbl">Auto-Connect</div><div class="srow-desc">Reconnect on startup</div></div><button class="tog" id="tog-autoconn"></button></div>
         </div>
@@ -1073,7 +1074,20 @@ function loadBlueprint(event){const file=event.target.files[0];if(!file)return;c
 // ════════════════════════════════════════
 //  CAMERA
 // ════════════════════════════════════════
-function toggleStream(){streamActive=!streamActive;const btn=document.getElementById('stream-btn');btn.querySelector('.cam-btn-icon').textContent=streamActive?'⏹':'▶';btn.querySelector('div:last-child').textContent=streamActive?'STOP STREAM':'START STREAM';sendCmd(streamActive?'CAM_STREAM_ON':'CAM_STREAM_OFF');}
+function toggleStream(){
+  streamActive=!streamActive;
+  const btn=document.getElementById('stream-btn');
+  btn.querySelector('.cam-btn-icon').textContent=streamActive?'⏹':'▶';
+  btn.querySelector('div:last-child').textContent=streamActive?'STOP STREAM':'START STREAM';
+  const feed=document.getElementById('cam-feed');
+  if(streamActive){
+    const camIp=localStorage.getItem('cam_ip')||document.getElementById('settings-cam-ip').value||'192.18.29.195:8888';
+    feed.innerHTML=`<iframe src="http://${camIp}/cam" style="width:100%;height:100%;border:none;border-radius:16px" allowfullscreen></iframe>`;
+  } else {
+    feed.innerHTML=`<div class="cam-scan-overlay"></div><div class="cam-reticle"><div class="cam-reticle-cross"></div></div><div class="cam-hud-tl"><span>RES: 1280×720</span><span>FPS: 30</span></div><div class="cam-hud-tr"><span>ISO: AUTO</span><span>EXP: AUTO</span></div><div class="cam-hud-bl"><span>SENSOR: CSI-2</span></div><div class="cam-hud-br"><span id="cam-time-label">--:--:--</span></div><div class="cam-no-feed"><div class="cam-no-feed-icon">📷</div><div class="cam-feed-label">OPTIC FEED NOT ACTIVE</div><div class="cam-feed-sub">Press START STREAM to activate</div></div>`;
+  }
+  sendCmd(streamActive?'CAM_STREAM_ON':'CAM_STREAM_OFF');
+}
 
 // ════════════════════════════════════════
 //  VISUALIZER
@@ -1616,6 +1630,7 @@ async function loadFlights(){const{lat,lon,radius}=getFlightSettings();const lam
 function saveSettings(){
   const ip=document.getElementById('settings-ip').value.trim();
   localStorage.setItem('groq_key',document.getElementById('ai-key').value);
+  localStorage.setItem('cam_ip', document.getElementById('settings-cam-ip').value.trim());
   localStorage.setItem('zyros_ip',ip);
   localStorage.setItem('fr_lat',document.getElementById('fr-lat').value);
   localStorage.setItem('fr_lon',document.getElementById('fr-lon').value);
@@ -1633,6 +1648,8 @@ function saveSettings(){
 document.querySelectorAll('.tog').forEach(btn=>{btn.addEventListener('click',()=>btn.classList.toggle('off'));});
 function loadSavedSettings(){
   const key=localStorage.getItem('groq_key');if(key)document.getElementById('ai-key').value=key;
+  const camIp = localStorage.getItem('cam_ip');
+    if(camIp) document.getElementById('settings-cam-ip').value = camIp;
   const ip=localStorage.getItem('zyros_ip');if(ip){document.getElementById('settings-ip').value=ip;}
   const lat=localStorage.getItem('fr_lat');if(lat)document.getElementById('fr-lat').value=lat;
   const lon=localStorage.getItem('fr_lon');if(lon)document.getElementById('fr-lon').value=lon;
