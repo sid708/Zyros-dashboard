@@ -1084,9 +1084,9 @@ function toggleStream(){
   const topbar=document.querySelector('#page-camera .ptopbar-right');
   if(streamActive){
     const camIp=localStorage.getItem('cam_ip')||document.getElementById('settings-cam-ip').value||'192.168.29.195:8888';
-    const streamUrl = camIp.includes('trycloudflare.com') 
-  ? `https://${camIp}/cam/index.m3u8`
-  : `http://${camIp}/cam`;
+    const streamUrl = camIp.includes('trycloudflare.com')
+  ? `https://${camIp}/index.m3u8`
+  : `http://${camIp}/index.m3u8`;
     feed.innerHTML=`<video id="cam-video" autoplay muted playsinline style="width:100%;height:100%;border-radius:16px;object-fit:cover;background:#000"></video>`;
     const video=document.getElementById('cam-video');
     if(typeof Hls!=='undefined'){
