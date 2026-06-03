@@ -1083,7 +1083,7 @@ function toggleStream(){
   const feed=document.getElementById('cam-feed');
   const topbar=document.querySelector('#page-camera .ptopbar-right');
   if(streamActive){
-    const camIp=localStorage.getItem('cam_ip')||document.getElementById('settings-cam-ip').value||'192.168.29.195:8888';
+    const camIp=localStorage.getItem('cam_ip')||document.getElementById('settings-cam-ip').value||'http://100.111.73.9:8888/cam/index.m3u8';
     const streamUrl = camIp.includes('trycloudflare.com')
   ? `https://${camIp}/index.m3u8`
   : `http://${camIp}/index.m3u8`;
