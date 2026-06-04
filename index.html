@@ -1123,7 +1123,6 @@ async function generateCodeChallenge(verifier){const data=new TextEncoder().enco
 
 async function spotifyStartAuth(){
   spClientId=document.getElementById('sp-client-id').value.trim();
-  localStorage.setItem('sp_client_secret', spClientSecret);
   if(!spClientId){showToast('Enter Client ID first');return;}
   localStorage.setItem('sp_client_id',spClientId);
   localStorage.setItem('sp_client_secret',spClientSecret);
