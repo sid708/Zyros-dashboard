@@ -1203,6 +1203,7 @@ async function spotifyHandleCallback(){
 }
 
 async function spotifyRefreshAccessToken(){
+  spClientId = spClientId || localStorage.getItem('sp_client_id') || '';
   if(!spRefreshToken)return false;
   try{
     const res=await fetch('https://accounts.spotify.com/api/token',{
@@ -1644,15 +1645,6 @@ async function loadFlights(){const{lat,lon,radius}=getFlightSettings();const lam
 // ════════════════════════════════════════
 //  SETTINGS
 // ════════════════════════════════════════
- if(window.location.search.includes('code=')&&window.location.search.includes('zyros_auth')){
-    const ok=await spotifyHandleCallback();
-    if(ok){
-      showToast('Spotify connected! 🎵',3000);
-      addLog('Spotify OAuth complete','ok');
-      const sd=document.getElementById('spotify-dot'),st=document.getElementById('spotify-status-txt');
-      if(sd){sd.style.background='var(--spotify)';sd.style.boxShadow='0 0 6px var(--spotify)';}
-      if(st)st.textContent='SPOTIFY READY';
-    }
 function saveSettings(){
   const ip=document.getElementById('settings-ip').value.trim();
   localStorage.setItem('groq_key',document.getElementById('ai-key').value);
@@ -1702,6 +1694,15 @@ async function shutdownPi(){if(!ws||!isConnected){showToast('Not connected to Pi
 //  INIT
 // ════════════════════════════════════════
 window.addEventListener('load',async()=>{
+  if(window.location.search.includes('code=')&&window.location.search.includes('zyros_auth')){
+    const ok=await spotifyHandleCallback();
+    if(ok){
+      showToast('Spotify connected! 🎵',3000);
+      addLog('Spotify OAuth complete','ok');
+      const sd=document.getElementById('spotify-dot'),st=document.getElementById('spotify-status-txt');
+      if(sd){sd.style.background='var(--spotify)';sd.style.boxShadow='0 0 6px var(--spotify)';}
+      if(st)st.textContent='SPOTIFY READY';
+    }
   loadSavedSettings();
   renderLogs();
   renderSpots();
