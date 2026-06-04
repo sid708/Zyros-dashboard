@@ -1123,7 +1123,7 @@ async function generateCodeChallenge(verifier){const data=new TextEncoder().enco
 
 async function spotifyStartAuth(){
   spClientId=document.getElementById('sp-client-id').value.trim();
-  spClientSecret=document.getElementById('sp-client-secret').value.trim();
+  localStorage.setItem('sp_client_secret', spClientSecret);
   if(!spClientId){showToast('Enter Client ID first');return;}
   localStorage.setItem('sp_client_id',spClientId);
   localStorage.setItem('sp_client_secret',spClientSecret);
@@ -1135,7 +1135,7 @@ async function spotifyStartAuth(){
   const challenge=await generateCodeChallenge(verifier);
   localStorage.setItem('sp_code_verifier',verifier);
 
-  const redirectUri=window.location.href.split('?')[0].split('#')[0];
+  const redirectUri = window.location.origin + window.location.pathname;
   localStorage.setItem('sp_redirect_uri',redirectUri);
 
   const scopes=[
@@ -1645,6 +1645,15 @@ async function loadFlights(){const{lat,lon,radius}=getFlightSettings();const lam
 // ════════════════════════════════════════
 //  SETTINGS
 // ════════════════════════════════════════
+ if(window.location.search.includes('code=')&&window.location.search.includes('zyros_auth')){
+    const ok=await spotifyHandleCallback();
+    if(ok){
+      showToast('Spotify connected! 🎵',3000);
+      addLog('Spotify OAuth complete','ok');
+      const sd=document.getElementById('spotify-dot'),st=document.getElementById('spotify-status-txt');
+      if(sd){sd.style.background='var(--spotify)';sd.style.boxShadow='0 0 6px var(--spotify)';}
+      if(st)st.textContent='SPOTIFY READY';
+    }
 function saveSettings(){
   const ip=document.getElementById('settings-ip').value.trim();
   localStorage.setItem('groq_key',document.getElementById('ai-key').value);
@@ -1700,15 +1709,7 @@ window.addEventListener('load',async()=>{
   buildVisualizer();
   resetIdleTimer();
   // Handle Spotify OAuth callback
-  if(window.location.search.includes('code=')&&window.location.search.includes('zyros_auth')){
-    const ok=await spotifyHandleCallback();
-    if(ok){
-      showToast('Spotify connected! 🎵',3000);
-      addLog('Spotify OAuth complete','ok');
-      const sd=document.getElementById('spotify-dot'),st=document.getElementById('spotify-status-txt');
-      if(sd){sd.style.background='var(--spotify)';sd.style.boxShadow='0 0 6px var(--spotify)';}
-      if(st)st.textContent='SPOTIFY READY';
-    }
+ 
   }
   setTimeout(connect,800);
 });
