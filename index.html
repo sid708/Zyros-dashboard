@@ -886,21 +886,43 @@ function toggleStream(){
 //  SPOTIFY API (robust - no more Unexpected token crashes)
 // ════════════════════════════════════════
 async function spApi(endpoint, method='GET', body=null){
-  if(!spAccessToken){ showToast('Not logged in to Spotify'); return null; }
+  if(!spAccessToken){ 
+    showToast('Not logged in to Spotify'); 
+    return null; 
+  }
+
+  // Auto-refresh if needed
   if(Date.now() > spTokenExpiry){
     const ok = await spotifyRefreshAccessToken();
-    if(!ok){ showToast('Spotify session expired'); return null; }
+    if(!ok){ 
+      showToast('Spotify session expired – please re-login'); 
+      return null; 
+    }
   }
-  const opts = { method, headers: { 'Authorization': 'Bearer ' + spAccessToken } };
-  if(body){ opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+
+  const opts = { 
+    method, 
+    headers: { 'Authorization': 'Bearer ' + spAccessToken } 
+  };
+  if(body){ 
+    opts.headers['Content-Type'] = 'application/json'; 
+    opts.body = JSON.stringify(body); 
+  }
 
   try{
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 9000);
-    const res = await fetch('https://api.spotify.com/v1' + endpoint, {...opts, signal: controller.signal});
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    
+    const res = await fetch('https://api.spotify.com/v1' + endpoint, {
+      ...opts, 
+      signal: controller.signal 
+    });
     clearTimeout(timeout);
 
+    // Success with no content
     if(res.status === 204 || res.status === 202) return { ok: true };
+
+    // Token expired → try refresh once
     if(res.status === 401){
       const ok = await spotifyRefreshAccessToken();
       if(ok) return spApi(endpoint, method, body);
@@ -909,29 +931,46 @@ async function spApi(endpoint, method='GET', body=null){
     }
 
     const txt = await res.text();
+
+    // Empty body on success
+    if(!txt && res.ok) return { ok: true };
+
     let parsed = null;
-    if(txt){
-      try{ parsed = JSON.parse(txt); }
-      catch(e){
-        addLog('Spotify non-JSON ('+res.status+'): '+txt.substring(0,50), 'err');
-        showToast('Spotify returned invalid data');
-        return null;
+    try {
+      parsed = JSON.parse(txt);
+    } catch(e) {
+      // This is the exact error you are seeing
+      console.warn('Spotify non-JSON response:', res.status, txt.substring(0, 200));
+      addLog(`Spotify invalid data (${res.status}): ${txt.substring(0, 60)}...`, 'err');
+      
+      if(res.status === 401 || res.status === 403){
+        showToast('Token invalid – please logout & login again');
+      } else {
+        showToast(`Spotify error ${res.status} – see log`);
       }
+      return null;
     }
+
     if(!res.ok){
-      const msg = parsed?.error?.message || ('HTTP '+res.status);
-      addLog('Spotify: '+msg, 'err');
+      const msg = parsed?.error?.message || (`HTTP ${res.status}`);
+      addLog('Spotify: ' + msg, 'err');
       showToast(msg);
       return null;
     }
+
     return parsed;
-  }catch(e){
-    if(e.name === 'AbortError') addLog('Spotify timeout: '+endpoint, 'err');
-    else addLog('Spotify error: '+e.message, 'err');
+
+  } catch(e){
+    if(e.name === 'AbortError'){
+      addLog('Spotify timeout: ' + endpoint, 'err');
+      showToast('Spotify request timed out');
+    } else {
+      addLog('Spotify network error: ' + e.message, 'err');
+      showToast('Network error talking to Spotify');
+    }
     return null;
   }
 }
-
 // ════════════════════════════════════════
 //  UNIFIED PLAY / PAUSE / NEXT / PREV  (THE KEY FIX)
 // ════════════════════════════════════════
