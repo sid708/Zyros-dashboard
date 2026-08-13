@@ -361,7 +361,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
     </div>
   </div>
 
-  <!-- MUSIC PAGE (FULLY FIXED) -->
+  <!-- MUSIC PAGE -->
   <div class="page" id="page-music">
     <div class="ptopbar">
       <button class="back-btn" onclick="goBack()">← BACK</button>
@@ -416,7 +416,9 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
             </div>
             <div class="mvol">
               <span>🔈</span>
-              <input type="range" min="0" max="100" value="80" id="music-volume" oninput="setVolume(this.value)"/>
+              <input type="range" min="0" max="100" value="80" id="music-volume" 
+                     oninput="onVolumeInput(this.value)" 
+                     onchange="onVolumeChange(this.value)"/>
               <span>🔊</span>
             </div>
             <div class="now-playing-bar">
@@ -600,6 +602,7 @@ let spCurrentlyPlaying = null;
 let musicMode = 'local';
 let currentSource = 'none';       // 'local' | 'spotify' | 'none'
 let spCurrentTab = 'search';
+let volumeTimeout = null;
 
 // ════════════════════════════════════════
 //  CLOCK + NAV
@@ -883,7 +886,7 @@ function toggleStream(){
 }
 
 // ════════════════════════════════════════
-//  SPOTIFY API (robust - no more Unexpected token crashes)
+//  SPOTIFY API
 // ════════════════════════════════════════
 async function spApi(endpoint, method='GET', body=null){
   if(!spAccessToken){ 
@@ -891,7 +894,6 @@ async function spApi(endpoint, method='GET', body=null){
     return null; 
   }
 
-  // Auto-refresh if needed
   if(Date.now() > spTokenExpiry){
     const ok = await spotifyRefreshAccessToken();
     if(!ok){ 
@@ -919,10 +921,8 @@ async function spApi(endpoint, method='GET', body=null){
     });
     clearTimeout(timeout);
 
-    // Success with no content
     if(res.status === 204 || res.status === 202) return { ok: true };
 
-    // Token expired → try refresh once
     if(res.status === 401){
       const ok = await spotifyRefreshAccessToken();
       if(ok) return spApi(endpoint, method, body);
@@ -930,31 +930,28 @@ async function spApi(endpoint, method='GET', body=null){
       return null;
     }
 
+    // 403 on volume is very common – just ignore it quietly
+    if(res.status === 403 && endpoint.includes('/volume')) {
+      return null;
+    }
+
     const txt = await res.text();
 
-    // Empty body on success
     if(!txt && res.ok) return { ok: true };
 
     let parsed = null;
     try {
       parsed = JSON.parse(txt);
     } catch(e) {
-      // This is the exact error you are seeing
-      console.warn('Spotify non-JSON response:', res.status, txt.substring(0, 200));
-      addLog(`Spotify invalid data (${res.status}): ${txt.substring(0, 60)}...`, 'err');
-      
-      if(res.status === 401 || res.status === 403){
-        showToast('Token invalid – please logout & login again');
-      } else {
-        showToast(`Spotify error ${res.status} – see log`);
-      }
+      console.warn('Spotify non-JSON:', res.status, txt.substring(0, 120));
+      addLog(`Spotify invalid data (${res.status})`, 'err');
       return null;
     }
 
     if(!res.ok){
       const msg = parsed?.error?.message || (`HTTP ${res.status}`);
       addLog('Spotify: ' + msg, 'err');
-      showToast(msg);
+      if(res.status !== 403) showToast(msg);
       return null;
     }
 
@@ -962,17 +959,44 @@ async function spApi(endpoint, method='GET', body=null){
 
   } catch(e){
     if(e.name === 'AbortError'){
-      addLog('Spotify timeout: ' + endpoint, 'err');
-      showToast('Spotify request timed out');
+      addLog('Spotify timeout', 'err');
     } else {
       addLog('Spotify network error: ' + e.message, 'err');
-      showToast('Network error talking to Spotify');
     }
     return null;
   }
 }
+
 // ════════════════════════════════════════
-//  UNIFIED PLAY / PAUSE / NEXT / PREV  (THE KEY FIX)
+//  VOLUME (debounced + smart)
+// ════════════════════════════════════════
+function onVolumeInput(v) {
+  // do nothing while dragging – prevents 403 spam
+}
+
+function onVolumeChange(v) {
+  clearTimeout(volumeTimeout);
+  volumeTimeout = setTimeout(() => {
+    setVolume(parseInt(v));
+  }, 180);
+}
+
+function setVolume(v) {
+  v = Math.max(0, Math.min(100, parseInt(v) || 80));
+
+  // Always control the Pi speaker
+  if (ws && isConnected) {
+    ws.send(JSON.stringify({ type: 'set_volume', volume: v }));
+  }
+
+  // Only send to Spotify when we are actually in Spotify mode
+  if (currentSource === 'spotify' && spAccessToken) {
+    spApi('/me/player/volume?volume_percent=' + v, 'PUT');
+  }
+}
+
+// ════════════════════════════════════════
+//  UNIFIED PLAY / PAUSE / NEXT / PREV
 // ════════════════════════════════════════
 function updatePlayButton(isPlaying){
   const btn = document.getElementById('music-play-btn');
@@ -987,7 +1011,7 @@ function updatePlayButton(isPlaying){
 }
 
 async function togglePlay(){
-  // LOCAL is active → stop local
+  // LOCAL is active
   if(currentSource === 'local' || (localPlaying && currentSource !== 'spotify')){
     if(localPlaying){
       if(ws && isConnected) ws.send(JSON.stringify({type:'stop_song'}));
@@ -1043,18 +1067,12 @@ async function prevTrack(){
   }
 }
 
-function setVolume(v){
-  if(ws && isConnected) ws.send(JSON.stringify({type:'set_volume', volume: parseInt(v)}));
-  if(spAccessToken) spApi('/me/player/volume?volume_percent='+v, 'PUT');
-}
-
 // ════════════════════════════════════════
 //  LOCAL PLAYBACK
 // ════════════════════════════════════════
 function playLocalSong(i){
   if(!ws || !isConnected){ showToast('Not connected to Pi'); return; }
 
-  // Stop Spotify if playing
   if(currentSource === 'spotify' && spAccessToken){
     spApi('/me/player/pause', 'PUT');
   }
@@ -1256,7 +1274,7 @@ async function spotifyPollPlayback(){
   spCurrentlyPlaying = data;
   const item = data.item;
   if(!item) return;
-  if(currentSource === 'local') return; // don't overwrite local UI
+  if(currentSource === 'local') return;
 
   currentSource = 'spotify';
   const artImg = document.getElementById('music-art-img');
@@ -1294,12 +1312,24 @@ function stopPlaybackPoll(){
 
 async function spotifySearch(){
   const q = document.getElementById('music-search-inp').value.trim();
-  if(!q) return;
+  if(!q){ showToast('Enter a search term'); return; }
+
   const list = document.getElementById('music-track-list');
   list.innerHTML = '<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--text3)">Searching…</div>';
-  const data = await spApi('/search?q='+encodeURIComponent(q)+'&type=track&limit=15');
-  if(!data){ list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--red)">Search failed</div>'; return; }
-  const tracks = data.tracks?.items || [];
+
+  const data = await spApi('/search?q=' + encodeURIComponent(q) + '&type=track&limit=15');
+
+  if(!data || !data.tracks){
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--red)">Search failed</div>';
+    return;
+  }
+
+  const tracks = data.tracks.items || [];
+  if(!tracks.length){
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">No results found</div>';
+    return;
+  }
+
   list.innerHTML = tracks.map((t,i) => renderSpotifyTrackItem(t,i)).join('');
 }
 
@@ -1418,7 +1448,7 @@ function showSpotifyMainPanel(){
 
 async function initMusicPage(){
   buildVisualizer();
-  showSpotifyMainPanel(); // always show player so local works
+  showSpotifyMainPanel();
 
   if(spAccessToken && Date.now() < spTokenExpiry){
     // ok
@@ -1476,8 +1506,7 @@ async function seekTrack(e){
 //  FLIGHTRADAR + SETTINGS
 // ════════════════════════════════════════
 function loadFlightradarMap(){
-  const lat = parseFloat(document.getElementById('fr-lat')?.value) || 18.9894;
-  const lon = parseFloat(document.getElementById('fr-lon')?.value) || 73.1175;
+  const lat = 18.9894, lon = 73.1175;
   document.getElementById('fr-iframe').src = `https://www.flightradar24.com/simple?lat=${lat}&lng=${lon}&z=9`;
 }
 async function loadFlights(){
@@ -1535,7 +1564,6 @@ function shutdownPi(){
 //  INIT
 // ════════════════════════════════════════
 window.addEventListener('load', async () => {
-  // Restore settings
   const ip = localStorage.getItem('zyros_ip');
   if(ip) document.getElementById('settings-ip').value = ip;
   const key = localStorage.getItem('groq_key');
@@ -1554,7 +1582,6 @@ window.addEventListener('load', async () => {
     if(el2) el2.value = spClientId;
   }
 
-  // OAuth callback
   if(window.location.search.includes('code=') && window.location.search.includes('zyros_auth')){
     const ok = await spotifyHandleCallback();
     if(ok){
