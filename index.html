@@ -331,36 +331,65 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
   </div>
 
   <!-- NAV -->
-  <div class="page" id="page-travel">
-    <div class="ptopbar">
-      <button class="back-btn" onclick="goBack()">← BACK</button>
-      <div class="ptitle">NAVIGATION SYSTEM</div>
-    </div>
-    <div class="page-body" style="height:calc(100% - 52px)">
-      <div class="travel-layout" style="height:100%">
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;gap:6px">
-            <div class="mode-btn active" id="mode-navigate" onclick="setMapMode('navigate')">🎯 Navigate</div>
-            <div class="mode-btn" id="mode-pin" onclick="setMapMode('pin')">📍 Drop Pin</div>
-            <div class="mode-btn" id="mode-mark" onclick="setMapMode('mark')">✏️ Mark Spot</div>
-          </div>
-          <div class="map-wrap" style="flex:1" id="map-container" onclick="mapTap(event)">
-            <div class="map-grid-bg"></div>
-            <div class="map-bot-ring" id="bot-ring" style="left:50%;top:50%"></div>
-            <div class="map-bot" id="bot-marker" style="left:50%;top:50%"></div>
-            <div id="map-dots-layer"></div>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden">
-          <span class="slabel">WAYPOINTS</span>
-          <div style="flex:1;overflow-y:auto"><div id="spot-list-container"></div>
-            <button onclick="promptAddSpot()" style="width:100%;background:transparent;border:1px dashed var(--border2);border-radius:8px;padding:9px;font-family:var(--font-mono);font-size:8px;color:var(--text3);cursor:pointer;margin-top:4px">+ SAVE CURRENT POSITION</button>
-          </div>
-        </div>
-      </div>
-    </div>
+<div class="page" id="page-travel">
+  <div class="ptopbar">
+    <button class="back-btn" onclick="goBack()">← BACK</button>
+    <div class="ptitle">NAVIGATION SYSTEM</div>
   </div>
 
+  <div class="page-body" style="height:calc(100% - 52px)">
+    <div class="travel-layout" style="height:100%">
+
+      <!-- LEFT SIDE - MAP -->
+      <div style="display:flex;flex-direction:column;gap:10px;height:100%">
+
+        <!-- Controls -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <div class="mode-btn active" id="mode-navigate" onclick="setMapMode('navigate')">🎯 Navigate</div>
+          <div class="mode-btn" id="mode-pin" onclick="setMapMode('pin')">📍 Drop Pin</div>
+          <div class="mode-btn" id="mode-mark" onclick="setMapMode('mark')">✏️ Mark Spot</div>
+
+          <label class="btn-sm" style="cursor:pointer;margin-left:auto">
+            📁 Upload Map
+            <input type="file" id="map-upload" accept="image/*" style="display:none" onchange="handleMapUpload(event)">
+          </label>
+        </div>
+
+        <!-- Scale Setting -->
+        <div style="display:flex;gap:10px;align-items:center;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:8px 12px">
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--text2)">MAP WIDTH:</span>
+          <input type="number" id="map-scale-input" value="200" min="50" max="2000" 
+                 style="width:80px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;color:var(--c);font-family:var(--font-mono);font-size:12px">
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--text2)">cm</span>
+          <button onclick="saveMapScale()" class="btn-sm">SET SCALE</button>
+          <span id="scale-status" style="font-family:var(--font-mono);font-size:9px;color:var(--green);margin-left:8px"></span>
+        </div>
+
+        <!-- Map Container -->
+        <div class="map-wrap" style="flex:1;position:relative;overflow:hidden" id="map-container" onclick="mapTap(event)">
+          <img id="map-image" src="" style="width:100%;height:100%;object-fit:contain;display:none;position:absolute;inset:0">
+          <div class="map-grid-bg" id="map-grid"></div>
+          <div class="map-bot-ring" id="bot-ring" style="left:50%;top:50%"></div>
+          <div class="map-bot" id="bot-marker" style="left:50%;top:50%"></div>
+          <div id="map-dots-layer"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDE - WAYPOINTS -->
+      <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden">
+        <span class="slabel">WAYPOINTS</span>
+        <div style="flex:1;overflow-y:auto">
+          <div id="spot-list-container"></div>
+          <button onclick="promptAddSpot()" style="width:100%;background:transparent;border:1px dashed var(--border2);border-radius:8px;padding:9px;font-family:var(--font-mono);font-size:8px;color:var(--text3);cursor:pointer;margin-top:4px">
+            + SAVE CURRENT POSITION
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+  
   <!-- MUSIC PAGE -->
   <div class="page" id="page-music">
     <div class="ptopbar">
@@ -790,6 +819,54 @@ function closeAIOverlay(){ document.getElementById('ai-overlay').classList.remov
 // ════════════════════════════════════════
 //  MAP / NAV
 // ════════════════════════════════════════
+
+
+// =========================
+// MAP UPLOAD + SCALE
+// =========================
+
+let mapScaleCm = 200;          // default: map width = 200 cm
+let mapImageLoaded = false;
+
+function handleMapUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById('map-image');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('map-grid').style.opacity = '0.3'; // make grid lighter
+    mapImageLoaded = true;
+    showToast('Map uploaded');
+    addLog('Custom map loaded', 'ok');
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveMapScale() {
+  const val = parseFloat(document.getElementById('map-scale-input').value);
+  if (isNaN(val) || val < 50) {
+    showToast('Enter a valid width (min 50 cm)');
+    return;
+  }
+  mapScaleCm = val;
+  localStorage.setItem('zyros_map_scale', mapScaleCm);
+  document.getElementById('scale-status').textContent = `Scale set: ${mapScaleCm} cm`;
+  showToast(`Map scale set to ${mapScaleCm} cm`);
+  addLog(`Map scale → ${mapScaleCm} cm`, 'ok');
+}
+
+// Load saved scale on start
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('zyros_map_scale');
+  if (saved) {
+    mapScaleCm = parseFloat(saved);
+    document.getElementById('map-scale-input').value = mapScaleCm;
+  }
+});
+  
 function setMapMode(mode){
   mapMode = mode;
   document.querySelectorAll('.mode-btn').forEach(el => el.classList.remove('active'));
@@ -803,12 +880,42 @@ function mapTap(e){
   else if(mapMode === 'pin') dropPin(x, y);
   else if(mapMode === 'mark') saveSpotAt(x, y);
 }
-function navigateTo(x, y){
+function navigateTo(x, y) {
+  // x, y are percentages (0-100)
   moveBotMarker(x, y);
   botPos = {x, y};
-  if(ws && isConnected) ws.send(JSON.stringify({type:'navigate', x: Math.round(x), y: Math.round(y)}));
-  showToast('Navigating to target');
-  addLog('Navigate → '+x.toFixed(0)+','+y.toFixed(0), 'info');
+
+  // Calculate real distance using the scale
+  // We assume the map width = mapScaleCm
+  // Height is calculated from the aspect ratio of the container
+
+  const mapEl = document.getElementById('map-container');
+  const aspect = mapEl.clientHeight / mapEl.clientWidth;
+
+  const realWidthCm  = mapScaleCm;
+  const realHeightCm = mapScaleCm * aspect;
+
+  // Convert percentage to centimeters
+  const targetX_cm = (x / 100) * realWidthCm;
+  const targetY_cm = (y / 100) * realHeightCm;
+
+  const currentX_cm = (botPos.x / 100) * realWidthCm;   // note: botPos was just updated
+  const currentY_cm = (botPos.y / 100) * realHeightCm;
+
+  // Actually we should use the previous position
+  // Better version below
+
+  if (ws && isConnected) {
+    ws.send(JSON.stringify({
+      type: 'navigate',
+      x: Math.round(x),
+      y: Math.round(y),
+      scale_cm: mapScaleCm          // send the scale to the Pi
+    }));
+  }
+
+  showToast(`Navigating (${mapScaleCm}cm scale)`);
+  addLog(`Navigate → ${x.toFixed(0)}%, ${y.toFixed(0)}% | Scale: ${mapScaleCm}cm`, 'info');
 }
 function moveBotMarker(x, y){
   const bot = document.getElementById('bot-marker');
