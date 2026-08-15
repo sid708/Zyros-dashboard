@@ -1674,19 +1674,33 @@ async function loadLikedSongs(){
   if(!data) return;
   list.innerHTML = (data.items||[]).map((item,i) => renderSpotifyTrackItem(item.track, i)).join('');
 }
-async function loadPlaylists(){
+async function loadPlaylists() {
   const list = document.getElementById('playlists-list');
   list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">Loading…</div>';
+
   const data = await spApi('/me/playlists?limit=40');
-  if(!data) return;
-  list.innerHTML = (data.items||[]).map(p => {
-    const art = p.images?.[0]?.url ? `<img src="${p.images[0].url}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">` : '📋';
-    return `<div class="track-item" onclick="spotifyPlayContext('${p.uri}')">
-      <div class="track-art">${art}</div>
-      <div class="track-info"><div class="track-name">${p.name}</div><div class="track-meta">${p.tracks?.total||0} tracks</div></div>
-    </div>`;
+  if (!data) return;
+
+  list.innerHTML = (data.items || []).map(p => {
+    const art = p.images?.[0]?.url
+      ? `<img src="${p.images[0].url}" style="width:100%;height:100%;object-fit:cover;border-radius:7px">`
+      : '📋';
+
+    return `
+      <div class="track-item" style="cursor:pointer">
+        <div class="track-art">${art}</div>
+        <div class="track-info" onclick="viewPlaylistTracks('${p.id}', '${p.name.replace(/'/g, "\\'")}')">
+          <div class="track-name">${p.name}</div>
+          <div class="track-meta">${p.tracks?.total || 0} tracks · Click to open</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-sm" onclick="event.stopPropagation(); spotifyPlayContext('${p.uri}')">▶ Play</button>
+        </div>
+      </div>
+    `;
   }).join('');
 }
+  
 async function spotifyPlayContext(uri){
   if(localPlaying && ws) ws.send(JSON.stringify({type:'stop_song'}));
   currentSource = 'spotify';
