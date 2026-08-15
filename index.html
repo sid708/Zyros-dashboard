@@ -987,11 +987,10 @@ function askWhatIsThis(){
   if(!ws || !isConnected){ showToast('Not connected to Pi'); return; }
   document.getElementById('ai-overlay').classList.add('active');
   document.getElementById('ai-spinner').style.display = 'block';
-  document.getElementById('ai-overlay-text').textContent = 'Capturing frame and analyzing…';
-  ws.send(JSON.stringify({type:'command', command:'CAM_PHOTO'}));
-  setTimeout(() => {
-    ws.send(JSON.stringify({type:'ask_text', text:'Look at what is directly in front of you and describe clearly what object or person you see in one sentence.'}));
-  }, 1200);
+  document.getElementById('ai-overlay-text').textContent = 'Looking through the ESP32 camera…';
+  
+  // Correct way – triggers the real vision path on the Pi
+  ws.send(JSON.stringify({type:'command', command:'WHAT_IS_THIS'}));
 }
 const randomPrompts = [
   'Say something cool and futuristic in one sentence as ZYROS.',
