@@ -691,27 +691,24 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
       <button class="back-btn" onclick="goBack()">← BACK</button>
       <div class="ptitle">TALK — VOICE & AI</div>
       <div class="ptopbar-right">
-        <button onclick="clearTalkHistory()" class="btn-sm">CLR LOG</button>
         <button onclick="stopAllSpeech()" class="btn-sm" style="border-color:rgba(255,31,75,.3);color:var(--red)">⏹ STOP</button>
       </div>
     </div>
-    <div class="page-body" style="height:calc(100% - 52px);display:grid;grid-template-columns:1.1fr 1.1fr 0.9fr;grid-template-rows:1fr auto;gap:12px;padding:12px 16px 16px;overflow:hidden">
+    <div class="page-body" style="height:calc(100% - 52px);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;max-width:980px">
 
-      <!-- COMMAND -->
-      <div style="background:var(--bg2);border:1px solid rgba(0,212,255,.15);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:34px;height:34px;border-radius:10px;background:rgba(0,212,255,.12);display:flex;align-items:center;justify-content:center;font-size:16px">🤖</div>
-            <div>
-              <div style="font-family:var(--font-hud);font-size:12px;font-weight:700;letter-spacing:1px">COMMAND ZYROS</div>
-              <div style="font-family:var(--font-mono);font-size:8px;color:var(--text2)">VOICE → ROBOT</div>
+        <!-- COMMAND -->
+        <div style="background:var(--bg2);border:1px solid rgba(0,212,255,.18);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;min-height:360px">
+          <div style="display:flex;align-items:center;gap:12px;width:100%">
+            <div style="width:40px;height:40px;border-radius:12px;background:rgba(0,212,255,.12);display:flex;align-items:center;justify-content:center;font-size:18px">🤖</div>
+            <div style="flex:1">
+              <div style="font-family:var(--font-hud);font-size:14px;font-weight:700;letter-spacing:2px">COMMAND ZYROS</div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--text2);margin-top:2px">Movement · system commands</div>
             </div>
+            <div id="cmd-listen-badge" style="font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--text3);padding:4px 10px;border-radius:20px;border:1px solid var(--border2)">IDLE</div>
           </div>
-          <div id="cmd-listen-badge" style="font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--text3);padding:3px 8px;border-radius:20px;border:1px solid var(--border2)">IDLE</div>
-        </div>
-        <div id="cmd-transcript" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;color:var(--text2);min-height:56px;line-height:1.5;flex-shrink:0">Tap mic and say a command…</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:4px 0">
-          <div id="cmd-wave" style="display:flex;align-items:flex-end;gap:3px;height:28px;width:72px;opacity:.35">
+          <div id="cmd-transcript" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:14px;color:var(--text2);min-height:72px;line-height:1.5">Tap mic and say a command…</div>
+          <div id="cmd-wave" style="display:flex;align-items:flex-end;gap:3px;height:28px;opacity:.35">
             <div class="twbar" style="width:4px;height:6px;background:var(--c);border-radius:2px"></div>
             <div class="twbar" style="width:4px;height:12px;background:var(--c);border-radius:2px"></div>
             <div class="twbar" style="width:4px;height:8px;background:var(--c);border-radius:2px"></div>
@@ -720,38 +717,22 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
             <div class="twbar" style="width:4px;height:14px;background:var(--c);border-radius:2px"></div>
             <div class="twbar" style="width:4px;height:7px;background:var(--c);border-radius:2px"></div>
           </div>
-          <button id="cmd-mic" onclick="toggleTalkMic('cmd')" style="width:68px;height:68px;border-radius:50%;border:2px solid var(--c);background:radial-gradient(circle at 30% 30%,rgba(0,212,255,.25),rgba(0,212,255,.06));font-size:26px;cursor:pointer;color:var(--c);box-shadow:0 0 20px rgba(0,212,255,.15)">🎤</button>
-          <div style="width:72px"></div>
+          <button id="cmd-mic" onclick="toggleTalkMic('cmd')" style="width:84px;height:84px;border-radius:50%;border:2px solid var(--c);background:radial-gradient(circle at 30% 30%,rgba(0,212,255,.28),rgba(0,212,255,.06));font-size:32px;cursor:pointer;color:var(--c);box-shadow:0 0 28px rgba(0,212,255,.2)">🎤</button>
+          <div id="cmd-response" style="display:none;width:100%;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:12px;font-size:13px;color:var(--c3);text-align:center"></div>
         </div>
-        <div id="cmd-response" style="display:none;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--c3)"></div>
-        <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--text3)">QUICK COMMANDS</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <button class="btn-sm" onclick="quickTalkCmd('WAVE','Wave')" style="text-align:left">👋 Wave</button>
-          <button class="btn-sm" onclick="quickTalkCmd('GOTO_HOME','Return base')" style="text-align:left">🏠 Go home</button>
-          <button class="btn-sm" onclick="quickTalkCmd('STOP','STOP')" style="text-align:left;border-color:rgba(255,31,75,.25);color:var(--red)">🛑 Stop</button>
-          <button class="btn-sm" onclick="quickTalkCmd('OPEN_COMPARTMENT','Open compartment')" style="text-align:left">🗃️ Compartment</button>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:auto">
-          <input id="cmd-text-input" class="music-search-inp" placeholder="Type a command…" style="flex:1;font-size:11px" onkeydown="if(event.key==='Enter')sendTypedCmd()"/>
-          <button class="btn-sm" onclick="sendTypedCmd()" style="border-color:var(--c);color:var(--c)">SEND</button>
-        </div>
-      </div>
 
-      <!-- AI -->
-      <div style="background:var(--bg2);border:1px solid rgba(124,58,237,.2);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:34px;height:34px;border-radius:10px;background:rgba(124,58,237,.15);display:flex;align-items:center;justify-content:center;font-size:16px">✨</div>
-            <div>
-              <div style="font-family:var(--font-hud);font-size:12px;font-weight:700;letter-spacing:1px">AI ASSISTANT</div>
-              <div style="font-family:var(--font-mono);font-size:8px;color:var(--text2)">NAV · Q&A · STATUS</div>
+        <!-- AI -->
+        <div style="background:var(--bg2);border:1px solid rgba(124,58,237,.22);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:18px;min-height:360px">
+          <div style="display:flex;align-items:center;gap:12px;width:100%">
+            <div style="width:40px;height:40px;border-radius:12px;background:rgba(124,58,237,.15);display:flex;align-items:center;justify-content:center;font-size:18px">✨</div>
+            <div style="flex:1">
+              <div style="font-family:var(--font-hud);font-size:14px;font-weight:700;letter-spacing:2px">AI ASSISTANT</div>
+              <div style="font-family:var(--font-mono);font-size:9px;color:var(--text2);margin-top:2px">Ask anything · maps · ETA · roads</div>
             </div>
+            <div id="ai-listen-badge" style="font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--text3);padding:4px 10px;border-radius:20px;border:1px solid var(--border2)">IDLE</div>
           </div>
-          <div id="ai-listen-badge" style="font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--text3);padding:3px 8px;border-radius:20px;border:1px solid var(--border2)">IDLE</div>
-        </div>
-        <div id="ai-transcript" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;color:var(--text2);min-height:56px;line-height:1.5;flex-shrink:0">Tap mic and ask anything…</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:4px 0">
-          <div id="ai-wave" style="display:flex;align-items:flex-end;gap:3px;height:28px;width:72px;opacity:.35">
+          <div id="ai-transcript" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:14px;color:var(--text2);min-height:72px;line-height:1.5">Tap mic and ask anything…</div>
+          <div id="ai-wave" style="display:flex;align-items:flex-end;gap:3px;height:28px;opacity:.35">
             <div class="twbar" style="width:4px;height:8px;background:var(--acc2);border-radius:2px"></div>
             <div class="twbar" style="width:4px;height:16px;background:var(--acc2);border-radius:2px"></div>
             <div class="twbar" style="width:4px;height:10px;background:var(--acc2);border-radius:2px"></div>
@@ -760,68 +741,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
             <div class="twbar" style="width:4px;height:15px;background:var(--acc2);border-radius:2px"></div>
             <div class="twbar" style="width:4px;height:6px;background:var(--acc2);border-radius:2px"></div>
           </div>
-          <button id="ai-mic" onclick="toggleTalkMic('ai')" style="width:68px;height:68px;border-radius:50%;border:2px solid var(--acc2);background:radial-gradient(circle at 30% 30%,rgba(124,58,237,.3),rgba(124,58,237,.08));font-size:26px;cursor:pointer;color:var(--acc3);box-shadow:0 0 20px rgba(124,58,237,.2)">🎤</button>
-          <div style="width:72px"></div>
+          <button id="ai-mic" onclick="toggleTalkMic('ai')" style="width:84px;height:84px;border-radius:50%;border:2px solid var(--acc2);background:radial-gradient(circle at 30% 30%,rgba(124,58,237,.32),rgba(124,58,237,.08));font-size:32px;cursor:pointer;color:var(--acc3);box-shadow:0 0 28px rgba(124,58,237,.25)">🎤</button>
+          <div id="ai-response" style="display:none;width:100%;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:12px;font-size:13px;color:var(--acc3);line-height:1.6;max-height:140px;overflow-y:auto"></div>
         </div>
-        <div id="ai-response" style="display:none;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--acc3);line-height:1.6;max-height:120px;overflow-y:auto;flex-shrink:0"></div>
-        <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--text3)">AI PROMPTS</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <button class="btn-sm" onclick="askTalkText('Give a short robotic status report as ZYROS')" style="text-align:left">📊 Status report</button>
-          <button class="btn-sm" onclick="askTalkText('Tell a very short robot joke')" style="text-align:left">😄 Robot joke</button>
-          <button class="btn-sm" onclick="askTalkText('What can you do as ZYROS? List key abilities briefly')" style="text-align:left">🧠 Capabilities</button>
-          <button class="btn-sm" onclick="askTalkText('Say something cool and futuristic in one sentence as ZYROS')" style="text-align:left">⚡ Future line</button>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:auto">
-          <input id="ai-text-input" class="music-search-inp" placeholder="Type a question…" style="flex:1;font-size:11px" onkeydown="if(event.key==='Enter')sendTypedAI()"/>
-          <button class="btn-sm" onclick="sendTypedAI()" style="border-color:var(--acc2);color:var(--acc3)">ASK</button>
-        </div>
-      </div>
 
-      <!-- RIGHT COLUMN: activity + link + toggles -->
-      <div style="display:flex;flex-direction:column;gap:12px;min-height:0">
-        <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:0">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--text3)">SESSION LOG</div>
-            <div id="talk-log-count" style="font-family:var(--font-mono);font-size:8px;color:var(--c)">0</div>
-          </div>
-          <div id="talk-session-log" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;min-height:0">
-            <div style="text-align:center;font-family:var(--font-mono);font-size:9px;color:var(--text3);padding:20px 8px">Voice & AI activity appears here</div>
-          </div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;flex-shrink:0">
-          <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--text3)">LINK & OUTPUT</div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:12px;color:var(--text2)">Neural link</span>
-            <span id="talk-link-status" style="font-family:var(--font-mono);font-size:10px;color:var(--red)">OFFLINE</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:12px;color:var(--text2)">Speak replies</span>
-            <button class="tog" id="talk-speak-tog" onclick="toggleTalkSpeak(this)"></button>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:12px;color:var(--text2)">GPS for nav</span>
-            <span id="talk-gps-status" style="font-family:var(--font-mono);font-size:10px;color:var(--text3)">—</span>
-          </div>
-          <button class="btn-sm" onclick="goTo('page-maps');initMaps()" style="width:100%;border-color:rgba(0,212,255,.25);color:var(--c)">🗺️ Open Maps</button>
-          <button class="btn-sm" onclick="askWhatIsThis()" style="width:100%;border-color:rgba(124,58,237,.3);color:var(--acc3)">🔍 What is this? (vision)</button>
-        </div>
-      </div>
-
-      <!-- BOTTOM STRIP -->
-      <div style="grid-column:1 / -1;background:linear-gradient(90deg,rgba(0,212,255,.04),rgba(124,58,237,.06));border:1px solid var(--border2);border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-shrink:0">
-        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text2);line-height:1.5;flex:1">
-          Voice commands go to the Pi. AI answers navigation, status, and general questions — routes open on <span style="color:var(--c)">MAPS</span> with Google directions. Type or speak.
-        </div>
-        <div style="display:flex;gap:8px;flex-shrink:0">
-          <div style="text-align:center;padding:4px 10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
-            <div style="font-family:var(--font-mono);font-size:7px;color:var(--text3)">MODE</div>
-            <div id="talk-mode-chip" style="font-family:var(--font-hud);font-size:11px;color:var(--c)">STANDBY</div>
-          </div>
-          <div style="text-align:center;padding:4px 10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
-            <div style="font-family:var(--font-mono);font-size:7px;color:var(--text3)">UTTERANCES</div>
-            <div id="talk-utt-count" style="font-family:var(--font-hud);font-size:11px;color:var(--acc3)">0</div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
