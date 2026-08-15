@@ -742,14 +742,13 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
             <div class="twbar" style="width:4px;height:6px;background:var(--acc2);border-radius:2px"></div>
           </div>
           <button id="ai-mic" onclick="toggleTalkMic('ai')" style="width:84px;height:84px;border-radius:50%;border:2px solid var(--acc2);background:radial-gradient(circle at 30% 30%,rgba(124,58,237,.32),rgba(124,58,237,.08));font-size:32px;cursor:pointer;color:var(--acc3);box-shadow:0 0 28px rgba(124,58,237,.25)">🎤</button>
-          <div id="ai-response" style="display:none;width:100%;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:12px;font-size:13px;color:var(--acc3);line-height:1.6;max-height:140px;overflow-y:auto"></div>
+          <div id="ai-response" style="display:none;width:100%;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:12px;font-size:13px;color:var(--acc3);line-height:1.6;max-height:140px;overflow-y:auto;text-align:left"></div>
         </div>
 
       </div>
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -818,14 +817,35 @@ function goTo(id){
   if(id === 'page-talk') { refreshTalkSideStatus(); setTalkModeChip('STANDBY'); }
   document.getElementById('sb-mode').textContent = id.replace('page-','').toUpperCase();
 }
+
+// Full page switch — no "behind" ghost overlay (used when opening Maps from Talk)
+function switchToPage(id){
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active', 'behind');
+  });
+  const target = document.getElementById(id);
+  if(target) target.classList.add('active');
+  // Keep home under the stack so Back works
+  if(id === 'page-home') pageStack = ['page-home'];
+  else pageStack = ['page-home', id];
+  clearInterval(systemPollInterval);
+  if(id === 'page-system'){ requestSystem(); systemPollInterval = setInterval(requestSystem, 5000); }
+  if(id === 'page-music') initMusicPage();
+  if(id === 'page-maps') setTimeout(initMaps, 100);
+  if(id === 'page-talk') { refreshTalkSideStatus(); setTalkModeChip('STANDBY'); }
+  document.getElementById('sb-mode').textContent = id.replace('page-','').toUpperCase();
+}
+
 function goBack(){
   if(pageStack.length <= 1) return;
   clearInterval(systemPollInterval);
   const cur = document.getElementById(pageStack.pop());
-  cur.classList.remove('active','behind');
+  if(cur) cur.classList.remove('active','behind');
+  // Hide any leftover behind pages
+  document.querySelectorAll('.page.behind').forEach(p => p.classList.remove('behind'));
   const prev = document.getElementById(pageStack[pageStack.length-1]);
-  prev.classList.remove('behind'); prev.classList.add('active');
-  document.getElementById('sb-mode').textContent = 'HOME';
+  if(prev){ prev.classList.remove('behind'); prev.classList.add('active'); }
+  document.getElementById('sb-mode').textContent = pageStack.length <= 1 ? 'HOME' : pageStack[pageStack.length-1].replace('page-','').toUpperCase();
 }
 
 function showToast(msg, dur=2000){
@@ -854,7 +874,7 @@ function renderLogs(){
 //  WEBSOCKET
 // ════════════════════════════════════════
 function connect(){
-  const ip = (document.getElementById('settings-ip')?.value || LS.getItem('zyros_ip') || '10.133.245.1815').trim();
+  const ip = (document.getElementById('settings-ip')?.value || LS.getItem('zyros_ip') || '10.133.245.181').trim();
   addLog('Connecting → '+ip, 'info');
   try{
     ws = new WebSocket('ws://'+ip+':5000/ws');
@@ -2041,14 +2061,9 @@ function sendTypedCmd(){
   const text = (inp?.value || '').trim();
   if(!text) return;
   document.getElementById('cmd-transcript').textContent = text;
-  if(ws && isConnected) ws.send(JSON.stringify({ type: 'command', command: 'SPEECH:' + text }));
-  else sendCmd('SPEECH:' + text);
-  const el = document.getElementById('cmd-response');
-  if(el){ el.style.display = 'block'; el.textContent = '✅ Sent: ' + text; }
-  pushTalkLog('cmd', text);
   bumpTalkUtt();
-  setTalkModeChip('CMD');
-  inp.value = '';
+  processVoiceIntent(text, 'cmd');
+  if(inp) inp.value = '';
 }
 
 function sendTypedAI(){
@@ -2056,8 +2071,9 @@ function sendTypedAI(){
   const text = (inp?.value || '').trim();
   if(!text) return;
   document.getElementById('ai-transcript').textContent = text;
-  handleTalkAI(text);
-  inp.value = '';
+  bumpTalkUtt();
+  processVoiceIntent(text, 'ai');
+  if(inp) inp.value = '';
 }
 
 function stopAllSpeech(){
@@ -2121,15 +2137,11 @@ function startTalkMic(mode){
       addLog('Heard: ' + text, 'ok');
       bumpTalkUtt();
       if(mode === 'cmd'){
-        if(ws && isConnected) ws.send(JSON.stringify({ type: 'command', command: 'SPEECH:' + text }));
-        else sendCmd('SPEECH:' + text);
-        document.getElementById(respId).textContent = '✅ Sent: ' + text;
-        document.getElementById(respId).style.display = 'block';
-        pushTalkLog('cmd', text);
-        setTalkModeChip('CMD');
+        // Intelligent routing — not raw SPEECH to Arduino
+        processVoiceIntent(text, 'cmd');
       } else {
         pushTalkLog('user', text);
-        handleTalkAI(text);
+        processVoiceIntent(text, 'ai');
       }
       stopTalkMic();
     }
@@ -2147,102 +2159,281 @@ function askTalkText(text){
   document.getElementById('ai-transcript').textContent = text;
   pushTalkLog('user', text);
   bumpTalkUtt();
-  handleTalkAI(text);
+  processVoiceIntent(text, 'ai');
+}
+
+// Map spoken phrases → real robot commands (never raw SPEECH to Arduino for these)
+const ROBOT_CMD_MAP = [
+  { re: /\b(wave|perform a wave|do a wave|wave at me)\b/i, cmd: 'WAVE', label: 'Wave' },
+  { re: /\b(stop|halt|freeze|emergency stop)\b/i, cmd: 'STOP', label: 'Stop' },
+  { re: /\b(go home|return home|return to base|go to base|dock)\b/i, cmd: 'GOTO_HOME', label: 'Return to base' },
+  { re: /\b(come here|come to me|come over)\b/i, cmd: 'COME_HERE', label: 'Come here' },
+  { re: /\b(open compartment|open the compartment|open hatch)\b/i, cmd: 'OPEN_COMPARTMENT', label: 'Open compartment' },
+  { re: /\b(take (a )?photo|capture|snap)\b/i, cmd: 'CAM_PHOTO', label: 'Take photo' },
+  { re: /\b(start patrol|begin patrol)\b/i, cmd: 'PATROL_START', label: 'Start patrol' },
+];
+
+function matchRobotCommand(text){
+  const t = text.trim();
+  for(const row of ROBOT_CMD_MAP){
+    if(row.re.test(t)) return row;
+  }
+  return null;
+}
+
+function extractDestination(text){
+  // Only when phrase is clearly navigation — never return random leftover text
+  let m = text.match(/(?:how far is|how far to|how long (?:will it take )?to(?: get to)?|how much time (?:to get )?to|distance to|eta to|route to|directions? to|navigate to|way to|drive to|take me to)\s+(.+?)(?:\?|$)/i);
+  if(m) return m[1].trim().replace(/\?$/,'').replace(/\bfrom here\b/i,'').trim();
+  if(/\b(how far|how long|route to|directions? to|navigate to|drive to)\b/i.test(text)){
+    m = text.match(/(navi mumbai(?:\s+international)?(?:\s+airport)?|mumbai(?:\s+international)?(?:\s+airport)?|thane(?:\s+creek)?|palm beach(?:\s+road)?)/i);
+    if(m) return m[1].trim();
+  }
+  return '';
+}
+
+function isNavQuery(text){
+  // Strict navigation only — general Q&A must NOT match
+  if(/\b(what is|what's|who is|tell me|joke|explain|define|photosynthesis)\b/i.test(text)
+      && !/\b(how far|how long|route|directions?|navigate|map to|drive to)\b/i.test(text)){
+    return false;
+  }
+  return /\b(how far|how long will it take|how long to|how much time|eta to|distance to|route to|directions? to|navigate to|way to|drive to|take me to|traffic to|map to)\b/i.test(text)
+    || /\b(show (?:me )?(?:the )?(?:route|directions|map)|open (?:the )?map)\b/i.test(text);
+}
+
+function isCallMe(text){
+  return /\b(call me|phone me|ring me)\b/i.test(text);
+}
+
+function isComeHere(text){
+  return /\b(come here|come to me|come over)\b/i.test(text);
+}
+
+function isSendToPhone(text){
+  return /\b(send (?:it |the )?(?:map|route|link|directions?)(?: to (?:my )?phone)?|send to phone|sms (?:me )?(?:the )?(?:map|route|link)|text me (?:the )?(?:map|route|link))\b/i.test(text);
+}
+
+function isVisionQuery(text){
+  return /\b(what is this|what's this|what do you see|describe what you see|look (?:at|in front)|identify this)\b/i.test(text);
+}
+
+async function ensureGps(){
+  if(mapsHasFix) return true;
+  if(!navigator.geolocation) return false;
+  return await new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        mapsHome = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        mapsHasFix = true;
+        resolve(true);
+      },
+      () => resolve(false),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 20000 }
+    );
+  });
+}
+
+async function runNavigationFlow(text, destHint){
+  await ensureGps();
+  let dest = destHint || extractDestination(text) || 'Mumbai Airport';
+  dest = dest.replace(/\?$/,'').trim();
+  if(!dest) dest = 'Mumbai Airport';
+
+  const toInput = document.getElementById('maps-to');
+  if(toInput) toInput.value = dest;
+  const fromInput = document.getElementById('maps-from');
+  if(fromInput) fromInput.value = 'Current location';
+
+  const origin = mapsHome.lat + ',' + mapsHome.lon;
+  const embed = buildGoogleDirEmbed(origin, dest);
+  const link = buildGoogleDirLink(origin, dest);
+  setGmapsSrc(embed);
+  mapsLastDirUrl = link;
+
+  // Open Maps only — no Talk overlay left behind
+  switchToPage('page-maps');
+
+  let timeStr = 'see Google Maps for live ETA';
+  let distKm = '';
+  let roads = [];
+  try{
+    const geoRes = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(dest) + '&limit=1&countrycodes=in', { headers: { 'Accept': 'application/json' } });
+    const geo = await geoRes.json();
+    if(geo && geo[0]){
+      const tlat = parseFloat(geo[0].lat), tlon = parseFloat(geo[0].lon);
+      const rr = await fetch(`https://router.project-osrm.org/route/v1/driving/${mapsHome.lon},${mapsHome.lat};${tlon},${tlat}?overview=false&steps=true`);
+      const jj = await rr.json();
+      if(jj.code === 'Ok' && jj.routes?.[0]){
+        const route = jj.routes[0];
+        distKm = (route.distance / 1000).toFixed(1);
+        const durMin = Math.round(route.duration / 60);
+        const hours = Math.floor(durMin / 60);
+        const mins = durMin % 60;
+        timeStr = hours > 0 ? `${hours} hours ${mins} minutes` : `${mins} minutes`;
+        (route.legs[0]?.steps || []).forEach(s => {
+          const name = s.name || s.ref;
+          if(name && name.length > 2 && !roads.includes(name)) roads.push(name);
+        });
+      }
+    }
+  }catch(_){}
+
+  const lower = text.toLowerCase();
+  let answer = '';
+  if(/road|which way|which road|path/i.test(lower)){
+    answer = roads.length
+      ? `Follow ${roads.slice(0, 4).join(', then ')}. About ${timeStr}` + (distKm ? `, ${distKm} km` : '') + '. Route is open on Maps.'
+      : `Route to ${dest} is open on the Maps page with live Google directions.`;
+  } else {
+    answer = `About ${timeStr} to ${dest}` + (distKm ? ` (${distKm} km)` : '') + '. Google Maps route is open on the Maps page.';
+  }
+
+  mapsLastRouteText = answer;
+  mapsConversationCtx.push({ role: 'user', text });
+  mapsConversationCtx.push({ role: 'assistant', text: answer, roads, dest, link });
+  if(mapsConversationCtx.length > 8) mapsConversationCtx = mapsConversationCtx.slice(-8);
+  const info = document.getElementById('maps-info');
+  if(info) info.textContent = 'Google Maps · you → ' + dest + (distKm ? ` · ${distKm} km · ~${timeStr}` : '');
+  return { answer, dest, link, timeStr, distKm };
+}
+
+function sendMapLinkViaSms(){
+  const link = mapsLastDirUrl || '';
+  if(!link){
+    showToast('No route yet — ask for a destination first');
+    speakText('There is no map route yet. Ask me how far a place is first.');
+    return false;
+  }
+  const body = 'ZYROS route: ' + link;
+  // Opens the device SMS app with the map link pre-filled (works on phone / desktop with messaging)
+  const smsUrl = 'sms:?&body=' + encodeURIComponent(body);
+  try{
+    window.open(smsUrl, '_blank');
+  }catch(_){
+    window.location.href = smsUrl;
+  }
+  // Also copy for convenience
+  try{ navigator.clipboard && navigator.clipboard.writeText(link); }catch(_){}
+  showToast('SMS draft opened with map link');
+  return true;
+}
+
+async function processVoiceIntent(text, source){
+  const lower = text.toLowerCase().trim();
+  const cmdResp = document.getElementById('cmd-response');
+  const aiResp = document.getElementById('ai-response');
+
+  // 1) Call me
+  if(isCallMe(text)){
+    sendCmd('COME_HERE');
+    const msg = 'Calling you — coming over.';
+    if(cmdResp){ cmdResp.style.display = 'block'; cmdResp.textContent = '✅ CALL / COME_HERE'; }
+    if(aiResp){ aiResp.style.display = 'block'; aiResp.textContent = msg; }
+    speakText(msg);
+    pushTalkLog('cmd', 'COME_HERE');
+    setTalkModeChip('CMD');
+    return;
+  }
+
+  // 1b) Come here
+  if(isComeHere(text)){
+    sendCmd('COME_HERE');
+    const msg = 'Coming to you.';
+    if(cmdResp){ cmdResp.style.display = 'block'; cmdResp.textContent = '✅ COME_HERE'; }
+    if(aiResp){ aiResp.style.display = 'block'; aiResp.textContent = msg; }
+    speakText(msg);
+    pushTalkLog('cmd', 'COME_HERE');
+    setTalkModeChip('CMD');
+    return;
+  }
+
+  // 1c) Vision — what is this
+  if(isVisionQuery(text)){
+    if(typeof askWhatIsThis === 'function') askWhatIsThis();
+    else if(ws && isConnected){
+      ws.send(JSON.stringify({type:'ask_text', text:'Look at what is directly in front of you and describe clearly what object or person you see in one sentence.'}));
+    }
+    const msg = 'Looking through the camera…';
+    if(cmdResp){ cmdResp.style.display = 'block'; cmdResp.textContent = '📷 Vision'; }
+    if(aiResp){ aiResp.style.display = 'block'; aiResp.textContent = msg; }
+    speakText(msg);
+    pushTalkLog('ai', msg);
+    setTalkModeChip('VISION');
+    return;
+  }
+
+  // 2) Send map/route to phone via SMS
+  if(isSendToPhone(text)){
+    const ok = sendMapLinkViaSms();
+    const msg = ok
+      ? 'Opening an SMS with the Google Maps route link for you.'
+      : 'No route loaded yet. Ask how far a place is, then say send to phone.';
+    if(aiResp){ aiResp.style.display = 'block'; aiResp.textContent = msg; }
+    if(cmdResp){ cmdResp.style.display = 'block'; cmdResp.textContent = ok ? '✅ SMS map link' : '⚠️ No route yet'; }
+    speakText(msg);
+    pushTalkLog('ai', msg);
+    setTalkModeChip('SMS');
+    return;
+  }
+
+  // 3) Known robot commands
+  const robot = matchRobotCommand(text);
+  if(robot){
+    sendCmd(robot.cmd);
+    if(cmdResp){ cmdResp.style.display = 'block'; cmdResp.textContent = '✅ ' + robot.label + ' (' + robot.cmd + ')'; }
+    if(source === 'ai' && aiResp){ aiResp.style.display = 'block'; aiResp.textContent = 'Executing ' + robot.label + '.'; }
+    speakText(robot.label + ' command sent.');
+    pushTalkLog('cmd', robot.cmd + ' — ' + robot.label);
+    setTalkModeChip('CMD');
+    return;
+  }
+
+  // 4) Navigation / maps — ONLY explicit nav questions
+  if(isNavQuery(text)){
+    if(aiResp){ aiResp.style.display = 'block'; aiResp.textContent = '⏳ Checking route…'; }
+    if(cmdResp){ cmdResp.style.display = 'block'; cmdResp.textContent = '⏳ Maps…'; }
+    try{
+      const result = await runNavigationFlow(text);
+      if(aiResp){ aiResp.style.display = 'block'; aiResp.textContent = result.answer; }
+      if(cmdResp){ cmdResp.style.display = 'block'; cmdResp.textContent = '✅ Route → ' + result.dest; }
+      speakText(result.answer);
+      pushTalkLog('ai', result.answer);
+      setTalkModeChip('NAV');
+      addLog('Nav: ' + result.dest, 'ok');
+    }catch(err){
+      const msg = 'Could not load route: ' + err.message;
+      if(aiResp){ aiResp.style.display = 'block'; aiResp.textContent = msg; }
+      speakText('Sorry, I could not load that route.');
+      pushTalkLog('err', msg);
+    }
+    return;
+  }
+
+  // 5) General questions / jokes / everything else → AI (stay on Talk, no Maps)
+  if(source === 'cmd'){
+    if(cmdResp){ cmdResp.style.display = 'block'; cmdResp.textContent = '🤖 Asking AI…'; }
+    const at = document.getElementById('ai-transcript');
+    if(at) at.textContent = text;
+  }
+  await handleTalkAI(text);
 }
 
 async function handleTalkAI(text){
   const respEl = document.getElementById('ai-response');
+  if(!respEl) return;
   respEl.style.display = 'block';
   respEl.textContent = '⏳ Thinking…';
   const lower = text.toLowerCase();
 
-  // Detect navigation / ETA / road questions and use live maps
-  const isNav = /how long|how much time|eta|distance|route|road|way to|directions?|navigate|go to|reach|airport|than e|palm beach|mumbai|thane/i.test(lower);
-
-  if(isNav){
+  // Nav fallback if called directly — strict
+  if(isNavQuery(text)){
     try{
-      let dest = '';
-      const m = text.match(/(?:to|towards|for)\s+(.+?)(?:\?|$)/i) || text.match(/(mumbai airport|thane|palm beach(?: road)?|navi mumbai)/i);
-      if(m) dest = m[1] || m[0];
-      if(!dest) dest = 'Mumbai Airport';
-      dest = dest.replace(/\?$/,'').trim();
-
-      const toInput = document.getElementById('maps-to');
-      if(toInput) toInput.value = dest;
-
-      // Fresh GPS if needed
-      if(!mapsHasFix && navigator.geolocation){
-        await new Promise((resolve) => {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              mapsHome = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-              mapsHasFix = true;
-              resolve();
-            },
-            () => resolve(),
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 15000 }
-          );
-        });
-      }
-
-      const origin = mapsHome.lat + ',' + mapsHome.lon;
-      // Load accurate Google Maps directions in Maps page
-      const embed = buildGoogleDirEmbed(origin, dest);
-      const link = buildGoogleDirLink(origin, dest);
-      setGmapsSrc(embed);
-      mapsLastDirUrl = link;
-
-      // Approximate ETA via OSRM (speech only — Google shows the real route)
-      let timeStr = 'the time shown on Google Maps';
-      let distKm = '';
-      let roads = [];
-      try{
-        const osrm = `https://router.project-osrm.org/route/v1/driving/${mapsHome.lon},${mapsHome.lat};`;
-        // Geocode dest roughly for ETA helper
-        const geoRes = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(dest) + '&limit=1&countrycodes=in', { headers: { 'Accept': 'application/json' } });
-        const geo = await geoRes.json();
-        if(geo && geo[0]){
-          const tlat = parseFloat(geo[0].lat), tlon = parseFloat(geo[0].lon);
-          const rr = await fetch(`https://router.project-osrm.org/route/v1/driving/${mapsHome.lon},${mapsHome.lat};${tlon},${tlat}?overview=false&steps=true`);
-          const jj = await rr.json();
-          if(jj.code === 'Ok' && jj.routes?.[0]){
-            const route = jj.routes[0];
-            distKm = (route.distance / 1000).toFixed(1);
-            const durMin = Math.round(route.duration / 60);
-            const hours = Math.floor(durMin / 60);
-            const mins = durMin % 60;
-            timeStr = hours > 0 ? `${hours} hours ${mins} minutes` : `${mins} minutes`;
-            (route.legs[0]?.steps || []).forEach(s => {
-              const name = s.name || s.ref;
-              if(name && name.length > 2 && !roads.includes(name)) roads.push(name);
-            });
-          }
-        }
-      }catch(_){}
-
-      let answer = '';
-      if(/road|which way|which road|path/i.test(lower)){
-        if(roads.length){
-          answer = `Follow ${roads.slice(0, 4).join(', then ')}. Google Maps has the live turn-by-turn route loaded. About ${timeStr}` + (distKm ? `, ${distKm} kilometers` : '') + '.';
-        } else {
-          answer = `I've loaded the best driving route to ${dest} on Google Maps. Check the Maps page for turn-by-turn roads and live traffic.`;
-        }
-      } else {
-        answer = `It should take about ${timeStr} to reach ${dest}` + (distKm ? ` (${distKm} km)` : '') + '. Google Maps is showing the full route with live traffic on the Maps page.';
-      }
-
-      mapsLastRouteText = answer;
-      mapsConversationCtx.push({ role: 'user', text });
-      mapsConversationCtx.push({ role: 'assistant', text: answer, roads });
-      if(mapsConversationCtx.length > 8) mapsConversationCtx = mapsConversationCtx.slice(-8);
-      const info = document.getElementById('maps-info');
-      if(info) info.textContent = 'Google Maps · your location → ' + dest;
-      respEl.textContent = answer;
-      pushTalkLog('ai', answer);
-      setTalkModeChip('NAV AI');
-      speakText(answer);
-      addLog('Nav AI: ' + answer, 'ok');
-      refreshTalkSideStatus();
+      const result = await runNavigationFlow(text);
+      respEl.textContent = result.answer;
+      speakText(result.answer);
+      pushTalkLog('ai', result.answer);
+      setTalkModeChip('NAV');
       return;
     }catch(err){
       addLog('Nav lookup failed: ' + err.message, 'err');
