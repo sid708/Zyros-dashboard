@@ -633,7 +633,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
       <div>
         <div class="sgroup">
           <div class="sgroup-title">NETWORK</div>
-          <div class="srow"><div><div class="srow-lbl">Pi IP Address</div><div class="srow-desc">Raspberry Pi IP</div></div><input class="sinp" id="settings-ip" value="192.168.29.195"/></div>
+          <div class="srow"><div><div class="srow-lbl">Pi IP Address</div><div class="srow-desc">Raspberry Pi IP</div></div><input class="sinp" id="settings-ip" value="10.133.245.181"/></div>
           <div class="srow"><div><div class="srow-lbl">Camera Stream IP</div><div class="srow-desc">mediamtx HLS</div></div><input class="sinp" id="settings-cam-ip" value="100.111.73.9:8888"/></div>
         </div>
         <div class="sgroup">
@@ -854,7 +854,7 @@ function renderLogs(){
 //  WEBSOCKET
 // ════════════════════════════════════════
 function connect(){
-  const ip = (document.getElementById('settings-ip')?.value || LS.getItem('zyros_ip') || '192.168.29.195').trim();
+  const ip = (document.getElementById('settings-ip')?.value || LS.getItem('zyros_ip') || '10.133.245.1815').trim();
   addLog('Connecting → '+ip, 'info');
   try{
     ws = new WebSocket('ws://'+ip+':5000/ws');
