@@ -1617,13 +1617,11 @@ async function spotifySearch() {
   const list = document.getElementById('music-track-list');
   list.innerHTML = '<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:9px;color:var(--text3)">Searching…</div>';
 
-  // Make sure we have a valid token
   if (!spAccessToken) {
     list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--red)">Not logged in to Spotify</div>';
     return;
   }
 
-  // Refresh token if needed
   if (Date.now() > spTokenExpiry) {
     const ok = await spotifyRefreshAccessToken();
     if (!ok) {
@@ -1633,11 +1631,11 @@ async function spotifySearch() {
   }
 
   try {
-    const data = await spApi('/search?q=' + encodeURIComponent(q) + '&type=track&limit=20');
+    // limit must be 10 or less for Development Mode apps (Spotify change 2026)
+    const data = await spApi('/search?q=' + encodeURIComponent(q) + '&type=track&limit=10');
 
     if (!data || !data.tracks) {
-      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--red)">Search failed. Try logging out and in again.</div>';
-      console.log('Spotify search response:', data);
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--red)">Search failed</div>';
       return;
     }
 
