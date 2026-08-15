@@ -1527,6 +1527,45 @@ async function spotifyHandleCallback(){
   return false;
 }
 
+async function viewPlaylistTracks(playlistId, playlistName) {
+  const list = document.getElementById('playlists-list');
+  list.innerHTML = `
+    <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
+      <button class="btn-sm" onclick="loadPlaylists()">← Back to Playlists</button>
+      <div style="font-family:var(--font-hud);font-size:13px;color:var(--c)">${playlistName}</div>
+    </div>
+    <div style="text-align:center;padding:20px;color:var(--text3)">Loading songs…</div>
+  `;
+
+  const data = await spApi(`/playlists/${playlistId}/tracks?limit=50`);
+  if (!data || !data.items) {
+    list.innerHTML += `<div style="text-align:center;padding:20px;color:var(--red)">Failed to load tracks</div>`;
+    return;
+  }
+
+  const tracks = data.items
+    .filter(item => item.track && item.track.id)
+    .map(item => item.track);
+
+  if (!tracks.length) {
+    list.innerHTML = `
+      <div style="margin-bottom:12px">
+        <button class="btn-sm" onclick="loadPlaylists()">← Back to Playlists</button>
+      </div>
+      <div style="text-align:center;padding:30px;color:var(--text3)">No tracks found in this playlist</div>
+    `;
+    return;
+  }
+
+  list.innerHTML = `
+    <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
+      <button class="btn-sm" onclick="loadPlaylists()">← Back to Playlists</button>
+      <div style="font-family:var(--font-hud);font-size:13px;color:var(--c)">${playlistName}</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3)">${tracks.length} songs</div>
+    </div>
+  ` + tracks.map((t, i) => renderSpotifyTrackItem(t, i)).join('');
+}
+  
 async function spotifyRefreshAccessToken(){
   if(!spRefreshToken) return false;
   spClientId = spClientId || LS.getItem('sp_client_id') || '';
