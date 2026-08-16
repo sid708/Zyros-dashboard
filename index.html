@@ -126,7 +126,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
 .ptitle{font-family:var(--font-hud);font-size:11px;font-weight:700;letter-spacing:5px;color:var(--text2);position:absolute;left:50%;transform:translateX(-50%)}
 .ptopbar-right{position:absolute;right:16px;display:flex;align-items:center;gap:8px}
 .home-content{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
-.menu-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,minmax(120px,220px));gap:10px;width:100%;flex:1}
+.menu-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,minmax(100px,180px));gap:10px;width:100%;flex:1}
 .mc{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:4px;cursor:pointer;position:relative;overflow:hidden;padding:16px;transition:all .2s}
 .mc:hover{transform:translateY(-2px)}
 .mc:active{transform:scale(0.96)}
@@ -333,6 +333,9 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
       </div>
       <div id="conn-label" style="font-family:var(--font-hud);font-size:10px;letter-spacing:3px;color:var(--red)">OFFLINE</div>
     </div>
+    <div style="display:flex;align-items:center;padding:0 12px;border-right:1px solid rgba(0,212,255,.08);height:100%">
+      <button onclick="goTo('page-settings')" title="Configuration" style="background:rgba(0,255,200,.08);border:1px solid rgba(0,255,200,.25);border-radius:10px;width:40px;height:40px;font-size:18px;cursor:pointer;color:var(--teal);display:flex;align-items:center;justify-content:center">⚙️</button>
+    </div>
     <div class="hdr-right">
       <div class="hdr-time" id="hdr-time">00:00:00</div>
       <div class="hdr-date" id="hdr-date">01 JAN 2025</div>
@@ -375,9 +378,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
           <div class="mc-icon-wrap">📊</div><div class="mc-badge">MOD-05</div>
           <div class="mc-label">DIAGNOSTICS</div><div class="mc-desc">TELEMETRY</div>
         </div>
-        <div class="mc" onclick="goTo('page-settings')" style="border-color:rgba(0,255,200,.2)">
-          <div class="mc-icon-wrap">⚙️</div><div class="mc-badge">MOD-06</div>
-          <div class="mc-label">CONFIG</div><div class="mc-desc">NETWORK · AI</div>
+        <div class="mc" onclick="goTo('page-modes')" style="border-color:rgba(255,170,0,.3)">
+          <div class="mc-icon-wrap">🤖</div><div class="mc-badge">MOD-06</div>
+          <div class="mc-label">MODES</div><div class="mc-desc">GUARD · FOLLOW · PATROL</div>
+          <div class="mc-status"><div class="mc-status-dot" id="modes-status-dot" style="background:var(--text3)"></div><span style="font-family:var(--font-mono);font-size:8px;color:var(--text2)" id="modes-status-txt">STANDBY</span></div>
         </div>
         <div class="mc" onclick="goTo('page-maps');initMaps()" style="border-color:rgba(0,180,255,.25)">
           <div class="mc-icon-wrap">🗺️</div><div class="mc-badge">MOD-07</div>
@@ -409,6 +413,76 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <div class="qa danger" onclick="quickAction('STOP','STOP All Motors')"><div class="qa-hotkey">ESC</div><div class="qa-icon">🛑</div><div class="qa-label">STOP</div><div class="qa-desc">Immediate halt</div></div>
       </div>
       <div id="qa-feedback" style="text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--c3);padding:14px;min-height:40px;letter-spacing:2px;background:rgba(0,212,255,.03);border:1px solid var(--border);border-radius:10px"></div>
+    </div>
+  </div>
+
+  <!-- MODES — Guard / Follow / Patrol / Greeting -->
+  <div class="page" id="page-modes">
+    <div class="ptopbar">
+      <button class="back-btn" onclick="goBack()">← BACK</button>
+      <div class="ptitle">AUTONOMY MODES</div>
+      <div class="ptopbar-right">
+        <button onclick="quickAction('STOP','STOP All')" class="btn-sm" style="border-color:rgba(255,31,75,.35);color:var(--red)">🛑 STOP</button>
+      </div>
+    </div>
+    <div class="page-body">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:12px 16px">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--text3)">ACTIVE MODE</div>
+          <div id="active-mode-label" style="font-family:var(--font-hud);font-size:16px;font-weight:700;color:var(--c);margin-top:4px">STANDBY</div>
+        </div>
+        <div id="active-mode-badge" style="font-family:var(--font-mono);font-size:9px;letter-spacing:2px;padding:6px 12px;border-radius:20px;border:1px solid var(--border2);color:var(--text2)">IDLE</div>
+      </div>
+
+      <div class="slabel">MOVEMENT &amp; SECURITY</div>
+      <div class="qa-grid" style="margin-bottom:18px">
+        <div class="qa" id="mode-card-follow" onclick="setAutonomyMode('FOLLOW_ME')">
+          <div class="qa-icon">🚶</div>
+          <div class="qa-label">FOLLOW ME</div>
+          <div class="qa-desc">Ultrasonic distance follow · stops when too close</div>
+        </div>
+        <div class="qa" id="mode-card-guard" onclick="setAutonomyMode('GUARD_ON')">
+          <div class="qa-icon">🛡️</div>
+          <div class="qa-label">GUARD MODE</div>
+          <div class="qa-desc">Patrol points · detect person · alert</div>
+        </div>
+        <div class="qa" id="mode-card-patrol" onclick="setAutonomyMode('PATROL_START')">
+          <div class="qa-icon">🧭</div>
+          <div class="qa-label">PATROL</div>
+          <div class="qa-desc">A → B → C loop using waypoints</div>
+        </div>
+        <div class="qa" id="mode-card-greeting" onclick="setAutonomyMode('SMART_GREET')">
+          <div class="qa-icon">👋</div>
+          <div class="qa-label">SMART GREET</div>
+          <div class="qa-desc">Detect person · face · wave · hello</div>
+        </div>
+        <div class="qa" id="mode-card-track" onclick="setAutonomyMode('HUMAN_TRACK')">
+          <div class="qa-icon">👤</div>
+          <div class="qa-label">HUMAN TRACK</div>
+          <div class="qa-desc">Camera track · pan head to face</div>
+        </div>
+        <div class="qa" id="mode-card-head" onclick="setAutonomyMode('HEAD_TRACK')">
+          <div class="qa-icon">👀</div>
+          <div class="qa-label">HEAD TRACK</div>
+          <div class="qa-desc">Pan + tilt look at person</div>
+        </div>
+      </div>
+
+      <div class="slabel">QUICK CONTROLS</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">
+        <button class="btn-sm" style="padding:12px;font-size:11px" onclick="setAutonomyMode('FOLLOW_STOP')">⏹ Exit Follow / Guard</button>
+        <button class="btn-sm" style="padding:12px;font-size:11px" onclick="quickAction('COME_HERE','Come Here')">📍 Come Here</button>
+        <button class="btn-sm" style="padding:12px;font-size:11px" onclick="quickAction('WAVE','Wave')">👋 Wave Now</button>
+        <button class="btn-sm" style="padding:12px;font-size:11px;border-color:rgba(255,31,75,.3);color:var(--red)" onclick="quickAction('STOP','Emergency Stop')">🛑 Emergency Stop</button>
+      </div>
+
+      <div class="slabel">NOTES</div>
+      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:14px 16px;font-family:var(--font-mono);font-size:10px;color:var(--text2);line-height:1.7">
+        <div>• <span style="color:var(--c)">FOLLOW ME</span> uses front ultrasonic sensors on the Arduino (no camera required).</div>
+        <div>• <span style="color:var(--amber)">GUARD / PATROL</span> need saved waypoints + person detection (ESP32 or Pi cam).</div>
+        <div>• <span style="color:var(--acc3)">SMART GREET / TRACK</span> need vision + pan-tilt servos.</div>
+        <div>• Use header <span style="color:var(--teal)">⚙️</span> for network / API keys. STOP always halts motors.</div>
+      </div>
     </div>
   </div>
 
@@ -926,6 +1000,14 @@ function connect(){
           updatePlayButton(false);
           stopVisualizer();
         }
+        if(d.type === 'mode_status' || (d.type === 'connected' && d.mode)){
+          currentAutonomyMode = d.mode || 'STANDBY';
+          if(typeof updateAutonomyUI === 'function') updateAutonomyUI();
+        }
+        if(d.type === 'stopped'){
+          currentAutonomyMode = 'STANDBY';
+          if(typeof updateAutonomyUI === 'function') updateAutonomyUI();
+        }
       }catch(err){ addLog('Parse error', 'err'); }
     };
     ws.onclose = () => { isConnected = false; setConn(false); clearInterval(systemPollInterval); addLog('Link severed','err'); };
@@ -983,6 +1065,61 @@ function quickAction(cmd, label){
   const el = document.getElementById('qa-feedback');
   if(el){ el.textContent = '✓ '+label.toUpperCase()+' — DISPATCHED'; setTimeout(()=>{ if(el.textContent.startsWith('✓')) el.textContent=''; }, 3000); }
 }
+
+// Autonomy modes (Guard / Follow / Patrol / Track)
+let currentAutonomyMode = 'STANDBY';
+const MODE_LABELS = {
+  FOLLOW_ME: 'FOLLOW ME',
+  GUARD_ON: 'GUARD MODE',
+  PATROL_START: 'PATROL',
+  SMART_GREET: 'SMART GREET',
+  HUMAN_TRACK: 'HUMAN TRACK',
+  HEAD_TRACK: 'HEAD TRACK',
+  FOLLOW_STOP: 'STANDBY',
+  STOP: 'STANDBY',
+  STANDBY: 'STANDBY'
+};
+function setAutonomyMode(cmd){
+  sendCmd(cmd);
+  if(cmd === 'FOLLOW_STOP' || cmd === 'STOP') currentAutonomyMode = 'STANDBY';
+  else currentAutonomyMode = cmd;
+  updateAutonomyUI();
+  const label = MODE_LABELS[cmd] || cmd;
+  showToast(label + (cmd === 'FOLLOW_STOP' || cmd === 'STOP' ? ' — stopped' : ' — activated'));
+  addLog('Mode → ' + label, cmd === 'FOLLOW_STOP' || cmd === 'STOP' ? 'info' : 'ok');
+}
+function updateAutonomyUI(){
+  const label = MODE_LABELS[currentAutonomyMode] || currentAutonomyMode;
+  const active = currentAutonomyMode !== 'STANDBY' && currentAutonomyMode !== 'FOLLOW_STOP';
+  const el = document.getElementById('active-mode-label');
+  if(el) el.textContent = label;
+  const badge = document.getElementById('active-mode-badge');
+  if(badge){
+    badge.textContent = active ? 'ACTIVE' : 'IDLE';
+    badge.style.color = active ? 'var(--green)' : 'var(--text2)';
+    badge.style.borderColor = active ? 'rgba(0,255,157,.35)' : 'var(--border2)';
+  }
+  const dot = document.getElementById('modes-status-dot');
+  const txt = document.getElementById('modes-status-txt');
+  if(dot) dot.style.background = active ? 'var(--green)' : 'var(--text3)';
+  if(txt) txt.textContent = active ? label : 'STANDBY';
+  const sbMode = document.getElementById('sb-mode');
+  if(sbMode && active) sbMode.textContent = label.replace(/\s+/g,'_');
+  // Highlight active card
+  ['follow','guard','patrol','greeting','track','head'].forEach(k => {
+    const card = document.getElementById('mode-card-' + k);
+    if(!card) return;
+    const map = {follow:'FOLLOW_ME',guard:'GUARD_ON',patrol:'PATROL_START',greeting:'SMART_GREET',track:'HUMAN_TRACK',head:'HEAD_TRACK'};
+    if(map[k] === currentAutonomyMode){
+      card.style.borderColor = 'rgba(0,255,157,.4)';
+      card.style.background = 'rgba(0,255,157,.08)';
+    } else {
+      card.style.borderColor = '';
+      card.style.background = '';
+    }
+  });
+}
+
 function askWhatIsThis(){
   if(!ws || !isConnected){ showToast('Not connected to Pi'); return; }
   document.getElementById('ai-overlay').classList.add('active');
@@ -2245,6 +2382,8 @@ const ROBOT_CMD_MAP = [
   { re: /\b(open compartment|open the compartment|open hatch)\b/i, cmd: 'OPEN_COMPARTMENT', label: 'Open compartment' },
   { re: /\b(take (a )?photo|capture|snap)\b/i, cmd: 'CAM_PHOTO', label: 'Take photo' },
   { re: /\b(start patrol|begin patrol)\b/i, cmd: 'PATROL_START', label: 'Start patrol' },
+  { re: /\b(follow me|start follow|follow mode)\b/i, cmd: 'FOLLOW_ME', label: 'Follow me' },
+  { re: /\b(guard mode|start guard|guard on)\b/i, cmd: 'GUARD_ON', label: 'Guard mode' },
 ];
 
 function matchRobotCommand(text){
