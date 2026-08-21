@@ -408,7 +408,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <div class="qa" onclick="quickAction('WAVE','Wave')"><div class="qa-hotkey">F1</div><div class="qa-icon">👋</div><div class="qa-label">WAVE</div><div class="qa-desc">Friendly wave gesture</div></div>
         <div class="qa" onclick="quickAction('GOTO_HOME','Return to Base')"><div class="qa-hotkey">F2</div><div class="qa-icon">🏠</div><div class="qa-label">RETURN BASE</div><div class="qa-desc">Autonomous dock</div></div>
         <div class="qa" onclick="askWhatIsThis()"><div class="qa-hotkey">F3</div><div class="qa-icon">🔍</div><div class="qa-label">WHAT IS THIS?</div><div class="qa-desc">AI vision identify</div></div>
-        <div class="qa" onclick="quickAction('OPEN_COMPARTMENT','Open Compartment')"><div class="qa-hotkey">F4</div><div class="qa-icon">🗃️</div><div class="qa-label">OPEN COMPARTMENT</div><div class="qa-desc">Servo latch</div></div>
+        <div class="qa" onclick="askJoke()"><div class="qa-hotkey">F4</div><div class="qa-icon">😂</div><div class="qa-label">TELL A JOKE</div><div class="qa-desc">AI robot humor</div></div>
         <div class="qa" onclick="askRandomPhrase()"><div class="qa-hotkey">F5</div><div class="qa-icon">🧠</div><div class="qa-label">RANDOM PHRASE</div><div class="qa-desc">AI speech</div></div>
         <div class="qa danger" onclick="quickAction('STOP','STOP All Motors')"><div class="qa-hotkey">ESC</div><div class="qa-icon">🛑</div><div class="qa-label">STOP</div><div class="qa-desc">Immediate halt</div></div>
       </div>
@@ -1140,6 +1140,12 @@ function askRandomPhrase(){
   ws.send(JSON.stringify({type:'ask_text', text: randomPrompts[Math.floor(Math.random()*randomPrompts.length)]}));
   const el = document.getElementById('qa-feedback');
   if(el) el.textContent = '💬 ZYROS IS THINKING…';
+}
+function askJoke(){
+  if(!ws || !isConnected){ showToast('Not connected to Pi'); return; }
+  ws.send(JSON.stringify({type:'ask_text', text: 'Tell a short, funny robot or AI joke as ZYROS. One or two sentences only, no markdown.'}));
+  const el = document.getElementById('qa-feedback');
+  if(el) el.textContent = '😂 ZYROS IS THINKING OF A JOKE…';
 }
 function closeAIOverlay(){ document.getElementById('ai-overlay').classList.remove('active'); }
 
@@ -2070,10 +2076,17 @@ function showMyLocationOnMap(){
 }
 
 function initMaps(){
-  locateDevice(true);
+  // Only request the browser's location permission ONCE per session.
+  // After the first fix, just re-show the cached position — no new prompt.
+  if(mapsHasFix){
+    showMyLocationOnMap();
+  } else {
+    locateDevice(true);
+  }
 }
 
 function centerMapsOnMe(){
+  // Explicit user action — refresh the fix (permission already granted, so this is silent)
   locateDevice(true);
 }
 
@@ -2161,6 +2174,30 @@ let talkSpeakEnabled = true;
 let talkSession = [];
 let talkUttCount = 0;
 let talkWaveTimer = null;
+
+// Microphone permission is requested explicitly ONCE and the resulting
+// stream is cached/reused. This also means the browser's permission
+// grant (persisted per-origin) is only ever triggered a single time —
+// every later mic tap just reuses it, no repeat prompts.
+let micPermissionGranted = false;
+let cachedMicStream = null;
+
+async function ensureMicPermission(){
+  if(micPermissionGranted && cachedMicStream) return true;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    showToast('Microphone not available in this browser');
+    return false;
+  }
+  try{
+    cachedMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    micPermissionGranted = true;
+    return true;
+  }catch(e){
+    showToast('Microphone permission denied');
+    addLog('Mic permission denied: ' + (e.message || e.name), 'err');
+    return false;
+  }
+}
 
 function pushTalkLog(kind, msg){
   const time = new Date().toLocaleTimeString('en-US',{hour12:false});
@@ -2314,9 +2351,15 @@ function toggleTalkMic(mode){
   startTalkMic(mode);
 }
 
-function startTalkMic(mode){
+async function startTalkMic(mode){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){ showToast('Speech recognition needs Chrome / supported browser'); return; }
+
+  // Ask for mic access only the first time — cached after that, so this
+  // never shows a second browser permission prompt.
+  const granted = await ensureMicPermission();
+  if(!granted) return;
+
   talkMicBusy = true;
   talkSpeechId++;
   const micId = mode === 'cmd' ? 'cmd-mic' : 'ai-mic';
