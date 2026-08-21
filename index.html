@@ -126,7 +126,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
 .ptitle{font-family:var(--font-hud);font-size:11px;font-weight:700;letter-spacing:5px;color:var(--text2);position:absolute;left:50%;transform:translateX(-50%)}
 .ptopbar-right{position:absolute;right:16px;display:flex;align-items:center;gap:8px}
 .home-content{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
-.menu-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,minmax(100px,180px));gap:10px;width:100%;flex:1}
+.menu-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,minmax(120px,220px));gap:10px;width:100%;flex:1}
 .mc{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:4px;cursor:pointer;position:relative;overflow:hidden;padding:16px;transition:all .2s}
 .mc:hover{transform:translateY(-2px)}
 .mc:active{transform:scale(0.96)}
@@ -408,7 +408,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <div class="qa" onclick="quickAction('WAVE','Wave')"><div class="qa-hotkey">F1</div><div class="qa-icon">👋</div><div class="qa-label">WAVE</div><div class="qa-desc">Friendly wave gesture</div></div>
         <div class="qa" onclick="quickAction('GOTO_HOME','Return to Base')"><div class="qa-hotkey">F2</div><div class="qa-icon">🏠</div><div class="qa-label">RETURN BASE</div><div class="qa-desc">Autonomous dock</div></div>
         <div class="qa" onclick="askWhatIsThis()"><div class="qa-hotkey">F3</div><div class="qa-icon">🔍</div><div class="qa-label">WHAT IS THIS?</div><div class="qa-desc">AI vision identify</div></div>
-        <div class="qa" onclick="askJoke()"><div class="qa-hotkey">F4</div><div class="qa-icon">😂</div><div class="qa-label">TELL A JOKE</div><div class="qa-desc">AI robot humor</div></div>
+        <div class="qa" onclick="quickAction('OPEN_COMPARTMENT','Open Compartment')"><div class="qa-hotkey">F4</div><div class="qa-icon">🗃️</div><div class="qa-label">OPEN COMPARTMENT</div><div class="qa-desc">Servo latch</div></div>
         <div class="qa" onclick="askRandomPhrase()"><div class="qa-hotkey">F5</div><div class="qa-icon">🧠</div><div class="qa-label">RANDOM PHRASE</div><div class="qa-desc">AI speech</div></div>
         <div class="qa danger" onclick="quickAction('STOP','STOP All Motors')"><div class="qa-hotkey">ESC</div><div class="qa-icon">🛑</div><div class="qa-label">STOP</div><div class="qa-desc">Immediate halt</div></div>
       </div>
@@ -416,17 +416,17 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
     </div>
   </div>
 
-  <!-- MODES — Guard / Follow / Patrol / Greeting -->
+  <!-- MODES — Follow / Guard / Patrol only -->
   <div class="page" id="page-modes">
     <div class="ptopbar">
       <button class="back-btn" onclick="goBack()">← BACK</button>
       <div class="ptitle">AUTONOMY MODES</div>
       <div class="ptopbar-right">
-        <button onclick="quickAction('STOP','STOP All')" class="btn-sm" style="border-color:rgba(255,31,75,.35);color:var(--red)">🛑 STOP</button>
+        <button onclick="quickAction('STOP','STOP All'); currentAutonomyMode='STANDBY'; updateAutonomyUI();" class="btn-sm" style="border-color:rgba(255,31,75,.35);color:var(--red)">🛑 STOP</button>
       </div>
     </div>
-    <div class="page-body">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:12px 16px">
+    <div class="page-body" style="display:flex;flex-direction:column;gap:16px;height:calc(100% - 0px);padding:16px 20px 24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:12px 18px;flex-shrink:0">
         <div>
           <div style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:var(--text3)">ACTIVE MODE</div>
           <div id="active-mode-label" style="font-family:var(--font-hud);font-size:16px;font-weight:700;color:var(--c);margin-top:4px">STANDBY</div>
@@ -434,54 +434,36 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <div id="active-mode-badge" style="font-family:var(--font-mono);font-size:9px;letter-spacing:2px;padding:6px 12px;border-radius:20px;border:1px solid var(--border2);color:var(--text2)">IDLE</div>
       </div>
 
-      <div class="slabel">MOVEMENT &amp; SECURITY</div>
-      <div class="qa-grid" style="margin-bottom:18px">
-        <div class="qa" id="mode-card-follow" onclick="setAutonomyMode('FOLLOW_ME')">
-          <div class="qa-icon">🚶</div>
-          <div class="qa-label">FOLLOW ME</div>
-          <div class="qa-desc">Ultrasonic distance follow · stops when too close</div>
-        </div>
-        <div class="qa" id="mode-card-guard" onclick="setAutonomyMode('GUARD_ON')">
-          <div class="qa-icon">🛡️</div>
-          <div class="qa-label">GUARD MODE</div>
-          <div class="qa-desc">Patrol points · detect person · alert</div>
-        </div>
-        <div class="qa" id="mode-card-patrol" onclick="setAutonomyMode('PATROL_START')">
-          <div class="qa-icon">🧭</div>
-          <div class="qa-label">PATROL</div>
-          <div class="qa-desc">A → B → C loop using waypoints</div>
-        </div>
-        <div class="qa" id="mode-card-greeting" onclick="setAutonomyMode('SMART_GREET')">
-          <div class="qa-icon">👋</div>
-          <div class="qa-label">SMART GREET</div>
-          <div class="qa-desc">Detect person · face · wave · hello</div>
-        </div>
-        <div class="qa" id="mode-card-track" onclick="setAutonomyMode('HUMAN_TRACK')">
-          <div class="qa-icon">👤</div>
-          <div class="qa-label">HUMAN TRACK</div>
-          <div class="qa-desc">Camera track · pan head to face</div>
-        </div>
-        <div class="qa" id="mode-card-head" onclick="setAutonomyMode('HEAD_TRACK')">
-          <div class="qa-icon">👀</div>
-          <div class="qa-label">HEAD TRACK</div>
-          <div class="qa-desc">Pan + tilt look at person</div>
-        </div>
-      </div>
+      <!-- 3 tall vertical columns side by side -->
+      <div style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;min-height:0">
 
-      <div class="slabel">QUICK CONTROLS</div>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">
-        <button class="btn-sm" style="padding:12px;font-size:11px" onclick="setAutonomyMode('FOLLOW_STOP')">⏹ Exit Follow / Guard</button>
-        <button class="btn-sm" style="padding:12px;font-size:11px" onclick="quickAction('COME_HERE','Come Here')">📍 Come Here</button>
-        <button class="btn-sm" style="padding:12px;font-size:11px" onclick="quickAction('WAVE','Wave')">👋 Wave Now</button>
-        <button class="btn-sm" style="padding:12px;font-size:11px;border-color:rgba(255,31,75,.3);color:var(--red)" onclick="quickAction('STOP','Emergency Stop')">🛑 Emergency Stop</button>
-      </div>
+        <!-- FOLLOW ME -->
+        <div class="qa" id="mode-card-follow" onclick="toggleAutonomyMode('FOLLOW_ME')"
+             style="height:100%;min-height:320px;padding:32px 18px;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;border-radius:20px;border-color:rgba(0,212,255,.22);background:linear-gradient(180deg,rgba(0,212,255,.08) 0%,var(--bg2) 45%)">
+          <div style="width:64px;height:64px;border-radius:16px;background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.35);display:flex;align-items:center;justify-content:center;font-family:var(--font-hud);font-size:26px;font-weight:700;color:var(--c)">◎</div>
+          <div class="qa-label" id="mode-label-follow" style="font-size:15px;letter-spacing:3px;color:var(--c)">FOLLOW ME</div>
+          <div class="qa-desc" style="line-height:1.7;padding:0 6px">Ultrasonic distance follow · stops when too close</div>
+          <div id="mode-state-follow" style="font-family:var(--font-mono);font-size:11px;letter-spacing:3px;padding:8px 18px;border-radius:20px;border:1px solid rgba(0,212,255,.25);color:var(--text3);margin-top:auto">OFF</div>
+        </div>
 
-      <div class="slabel">NOTES</div>
-      <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:14px 16px;font-family:var(--font-mono);font-size:10px;color:var(--text2);line-height:1.7">
-        <div>• <span style="color:var(--c)">FOLLOW ME</span> uses front ultrasonic sensors on the Arduino (no camera required).</div>
-        <div>• <span style="color:var(--amber)">GUARD / PATROL</span> need saved waypoints + person detection (ESP32 or Pi cam).</div>
-        <div>• <span style="color:var(--acc3)">SMART GREET / TRACK</span> need vision + pan-tilt servos.</div>
-        <div>• Use header <span style="color:var(--teal)">⚙️</span> for network / API keys. STOP always halts motors.</div>
+        <!-- GUARD -->
+        <div class="qa" id="mode-card-guard" onclick="toggleAutonomyMode('GUARD_ON')"
+             style="height:100%;min-height:320px;padding:32px 18px;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;border-radius:20px;border-color:rgba(124,58,237,.28);background:linear-gradient(180deg,rgba(124,58,237,.1) 0%,var(--bg2) 45%)">
+          <div style="width:64px;height:64px;border-radius:16px;background:rgba(124,58,237,.14);border:1px solid rgba(124,58,237,.4);display:flex;align-items:center;justify-content:center;font-family:var(--font-hud);font-size:24px;font-weight:700;color:var(--acc3)">⬡</div>
+          <div class="qa-label" id="mode-label-guard" style="font-size:15px;letter-spacing:3px;color:var(--acc3)">GUARD MODE</div>
+          <div class="qa-desc" style="line-height:1.7;padding:0 6px">Patrol points · detect person · alert</div>
+          <div id="mode-state-guard" style="font-family:var(--font-mono);font-size:11px;letter-spacing:3px;padding:8px 18px;border-radius:20px;border:1px solid rgba(124,58,237,.3);color:var(--text3);margin-top:auto">OFF</div>
+        </div>
+
+        <!-- PATROL -->
+        <div class="qa" id="mode-card-patrol" onclick="toggleAutonomyMode('PATROL_START')"
+             style="height:100%;min-height:320px;padding:32px 18px;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;border-radius:20px;border-color:rgba(255,170,0,.28);background:linear-gradient(180deg,rgba(255,170,0,.09) 0%,var(--bg2) 45%)">
+          <div style="width:64px;height:64px;border-radius:16px;background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.35);display:flex;align-items:center;justify-content:center;font-family:var(--font-hud);font-size:26px;font-weight:700;color:var(--amber)">⟳</div>
+          <div class="qa-label" id="mode-label-patrol" style="font-size:15px;letter-spacing:3px;color:var(--amber)">PATROL</div>
+          <div class="qa-desc" style="line-height:1.7;padding:0 6px">A → B → C loop using waypoints</div>
+          <div id="mode-state-patrol" style="font-family:var(--font-mono);font-size:11px;letter-spacing:3px;padding:8px 18px;border-radius:20px;border:1px solid rgba(255,170,0,.3);color:var(--text3);margin-top:auto">OFF</div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -744,6 +726,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;b
         <button onclick="centerMapsOnMe()" class="btn-sm">📍 ME</button>
         <button onclick="clearMapRoute()" class="btn-sm">✕ CLEAR</button>
         <button onclick="openInGoogleMapsApp()" class="btn-sm">↗ OPEN</button>
+        <button onclick="sendMapsRouteToPhone()" class="btn-sm" style="background:rgba(0,212,255,.15);border-color:var(--c)">📤 SEND</button>
       </div>
     </div>
     <div class="page-body" style="height:calc(100% - 52px);display:flex;flex-direction:column;gap:10px;padding:12px 16px 16px;overflow:hidden">
@@ -967,6 +950,13 @@ function connect(){
         if(d.type === 'nav_start') showToast('Navigating…', 1500);
         if(d.type === 'nav_done') showToast('Target reached ✓', 1500);
         if(d.type === 'stopped') showToast('All motors halted', 1000);
+        if(d.type === 'sms_sent'){
+          showToast(d.ok ? 'Route sent to Telegram ✓' : ('Send failed: ' + (d.error || 'unknown')), 2500);
+          if(voiceInitiatedSend){
+            voiceInitiatedSend = false;
+            speakText(d.ok ? 'Done. Sent to your phone.' : 'Sorry, sending failed.');
+          }
+        }
         if(d.type === 'ai_display' || d.type === 'ai_response'){
           const txt = d.text || d.response || '';
           const spinner = document.getElementById('ai-spinner');
@@ -1066,28 +1056,58 @@ function quickAction(cmd, label){
   if(el){ el.textContent = '✓ '+label.toUpperCase()+' — DISPATCHED'; setTimeout(()=>{ if(el.textContent.startsWith('✓')) el.textContent=''; }, 3000); }
 }
 
-// Autonomy modes (Guard / Follow / Patrol / Track)
+// Autonomy modes — Follow / Guard / Patrol (toggle on card)
 let currentAutonomyMode = 'STANDBY';
 const MODE_LABELS = {
   FOLLOW_ME: 'FOLLOW ME',
   GUARD_ON: 'GUARD MODE',
   PATROL_START: 'PATROL',
-  SMART_GREET: 'SMART GREET',
-  HUMAN_TRACK: 'HUMAN TRACK',
-  HEAD_TRACK: 'HEAD TRACK',
   FOLLOW_STOP: 'STANDBY',
   STOP: 'STANDBY',
   STANDBY: 'STANDBY'
 };
-function setAutonomyMode(cmd){
+const MODE_OFF_CMD = {
+  FOLLOW_ME: 'FOLLOW_STOP',
+  GUARD_ON: 'FOLLOW_STOP',
+  PATROL_START: 'FOLLOW_STOP'
+};
+const MODE_UI = {
+  FOLLOW_ME: { key: 'follow', onLabel: 'UNFOLLOW', offLabel: 'FOLLOW ME', desc: 'Ultrasonic distance follow · stops when too close' },
+  GUARD_ON:  { key: 'guard',  onLabel: 'EXIT GUARD', offLabel: 'GUARD MODE', desc: 'Patrol points · detect person · alert' },
+  PATROL_START: { key: 'patrol', onLabel: 'STOP PATROL', offLabel: 'PATROL', desc: 'A → B → C loop using waypoints' }
+};
+
+function toggleAutonomyMode(cmd){
+  // If this mode is already on → turn it off
+  if(currentAutonomyMode === cmd){
+    const off = MODE_OFF_CMD[cmd] || 'FOLLOW_STOP';
+    sendCmd(off);
+    currentAutonomyMode = 'STANDBY';
+    updateAutonomyUI();
+    showToast((MODE_LABELS[cmd] || cmd) + ' — stopped');
+    addLog('Mode → STANDBY', 'info');
+    return;
+  }
+  // Starting a new mode (replaces any previous)
   sendCmd(cmd);
-  if(cmd === 'FOLLOW_STOP' || cmd === 'STOP') currentAutonomyMode = 'STANDBY';
-  else currentAutonomyMode = cmd;
+  currentAutonomyMode = cmd;
   updateAutonomyUI();
-  const label = MODE_LABELS[cmd] || cmd;
-  showToast(label + (cmd === 'FOLLOW_STOP' || cmd === 'STOP' ? ' — stopped' : ' — activated'));
-  addLog('Mode → ' + label, cmd === 'FOLLOW_STOP' || cmd === 'STOP' ? 'info' : 'ok');
+  showToast((MODE_LABELS[cmd] || cmd) + ' — activated');
+  addLog('Mode → ' + (MODE_LABELS[cmd] || cmd), 'ok');
 }
+
+function setAutonomyMode(cmd){
+  // kept for any leftover callers
+  if(cmd === 'FOLLOW_STOP' || cmd === 'STOP'){
+    sendCmd(cmd);
+    currentAutonomyMode = 'STANDBY';
+  } else {
+    toggleAutonomyMode(cmd);
+    return;
+  }
+  updateAutonomyUI();
+}
+
 function updateAutonomyUI(){
   const label = MODE_LABELS[currentAutonomyMode] || currentAutonomyMode;
   const active = currentAutonomyMode !== 'STANDBY' && currentAutonomyMode !== 'FOLLOW_STOP';
@@ -1104,18 +1124,31 @@ function updateAutonomyUI(){
   if(dot) dot.style.background = active ? 'var(--green)' : 'var(--text3)';
   if(txt) txt.textContent = active ? label : 'STANDBY';
   const sbMode = document.getElementById('sb-mode');
-  if(sbMode && active) sbMode.textContent = label.replace(/\s+/g,'_');
-  // Highlight active card
-  ['follow','guard','patrol','greeting','track','head'].forEach(k => {
-    const card = document.getElementById('mode-card-' + k);
-    if(!card) return;
-    const map = {follow:'FOLLOW_ME',guard:'GUARD_ON',patrol:'PATROL_START',greeting:'SMART_GREET',track:'HUMAN_TRACK',head:'HEAD_TRACK'};
-    if(map[k] === currentAutonomyMode){
-      card.style.borderColor = 'rgba(0,255,157,.4)';
-      card.style.background = 'rgba(0,255,157,.08)';
-    } else {
-      card.style.borderColor = '';
-      card.style.background = '';
+  if(sbMode) sbMode.textContent = active ? label.replace(/\s+/g,'_') : (document.getElementById('page-modes')?.classList.contains('active') ? 'MODES' : sbMode.textContent);
+
+  // Update each of the 3 tall cards
+  Object.keys(MODE_UI).forEach(cmdKey => {
+    const ui = MODE_UI[cmdKey];
+    const card = document.getElementById('mode-card-' + ui.key);
+    const stateEl = document.getElementById('mode-state-' + ui.key);
+    const labelEl = document.getElementById('mode-label-' + ui.key);
+    const isOn = currentAutonomyMode === cmdKey;
+    if(card){
+      if(isOn){
+        card.style.borderColor = 'rgba(0,255,157,.45)';
+        card.style.background = 'rgba(0,255,157,.1)';
+      } else {
+        card.style.borderColor = '';
+        card.style.background = '';
+      }
+    }
+    if(stateEl){
+      stateEl.textContent = isOn ? 'ON' : 'OFF';
+      stateEl.style.color = isOn ? 'var(--green)' : 'var(--text3)';
+      stateEl.style.borderColor = isOn ? 'rgba(0,255,157,.4)' : 'var(--border2)';
+    }
+    if(labelEl){
+      labelEl.textContent = isOn ? ui.onLabel : ui.offLabel;
     }
   });
 }
@@ -1140,12 +1173,6 @@ function askRandomPhrase(){
   ws.send(JSON.stringify({type:'ask_text', text: randomPrompts[Math.floor(Math.random()*randomPrompts.length)]}));
   const el = document.getElementById('qa-feedback');
   if(el) el.textContent = '💬 ZYROS IS THINKING…';
-}
-function askJoke(){
-  if(!ws || !isConnected){ showToast('Not connected to Pi'); return; }
-  ws.send(JSON.stringify({type:'ask_text', text: 'Tell a short, funny robot or AI joke as ZYROS. One or two sentences only, no markdown.'}));
-  const el = document.getElementById('qa-feedback');
-  if(el) el.textContent = '😂 ZYROS IS THINKING OF A JOKE…';
 }
 function closeAIOverlay(){ document.getElementById('ai-overlay').classList.remove('active'); }
 
@@ -2025,6 +2052,7 @@ let mapsLastDirUrl = '';
 let mapsHome = { lat: 19.0760, lon: 72.8777 }; // fallback until GPS
 let mapsHasFix = false;
 let mapsConversationCtx = [];
+let mapsRouteActive = false; // true while a route (not just a "you are here" pin) is on screen
 
 function gmapsFrame(){
   return document.getElementById('gmaps-frame');
@@ -2076,21 +2104,19 @@ function showMyLocationOnMap(){
 }
 
 function initMaps(){
-  // Only request the browser's location permission ONCE per session.
-  // After the first fix, just re-show the cached position — no new prompt.
-  if(mapsHasFix){
-    showMyLocationOnMap();
-  } else {
-    locateDevice(true);
-  }
+  // If a route is already on screen (e.g. just arrived here from a Talk query),
+  // silently refresh GPS for future queries but don't recenter/overwrite the route.
+  if(mapsRouteActive){ locateDevice(false); return; }
+  locateDevice(true);
 }
 
 function centerMapsOnMe(){
-  // Explicit user action — refresh the fix (permission already granted, so this is silent)
+  mapsRouteActive = false; // user explicitly asked to see themselves, not the route
   locateDevice(true);
 }
 
 function clearMapRoute(){
+  mapsRouteActive = false;
   mapsLastRouteText = '';
   mapsLastDirUrl = '';
   const info = document.getElementById('maps-info');
@@ -2146,6 +2172,7 @@ async function searchMapsRoute(){
   const link = buildGoogleDirLink(origin, toQ);
   setGmapsSrc(embed);
   mapsLastDirUrl = link;
+  mapsRouteActive = true;
   mapsLastRouteText = 'Driving directions to ' + toQ + ' (Google Maps).';
   info.textContent = 'Google Maps · ' + (useGps ? 'from your location' : fromQ) + ' → ' + toQ;
   mapsConversationCtx.push({ role: 'route', from: fromQ, to: toQ, text: mapsLastRouteText });
@@ -2157,6 +2184,20 @@ async function searchMapsRoute(){
 function openInGoogleMapsApp(){
   const url = mapsLastDirUrl || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(mapsHome.lat + ',' + mapsHome.lon));
   window.open(url, '_blank');
+}
+
+function sendRouteViaTelegram(){
+  const url = mapsLastDirUrl || '';
+  if(!url) return false;
+  if(!ws || !isConnected){ showToast('Not connected to ZYROS'); return false; }
+  ws.send(JSON.stringify({ type: 'send_sms', url: url, text: mapsLastRouteText || 'ZYROS route' }));
+  return true;
+}
+
+function sendMapsRouteToPhone(){
+  const sent = sendRouteViaTelegram();
+  if(sent) showToast('Sending route…');
+  else showToast(mapsLastDirUrl ? 'Not connected to ZYROS' : 'No route yet — ask for a destination first');
 }
 
 function speakMapsInfo(){
@@ -2174,30 +2215,8 @@ let talkSpeakEnabled = true;
 let talkSession = [];
 let talkUttCount = 0;
 let talkWaveTimer = null;
-
-// Microphone permission is requested explicitly ONCE and the resulting
-// stream is cached/reused. This also means the browser's permission
-// grant (persisted per-origin) is only ever triggered a single time —
-// every later mic tap just reuses it, no repeat prompts.
-let micPermissionGranted = false;
-let cachedMicStream = null;
-
-async function ensureMicPermission(){
-  if(micPermissionGranted && cachedMicStream) return true;
-  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    showToast('Microphone not available in this browser');
-    return false;
-  }
-  try{
-    cachedMicStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    micPermissionGranted = true;
-    return true;
-  }catch(e){
-    showToast('Microphone permission denied');
-    addLog('Mic permission denied: ' + (e.message || e.name), 'err');
-    return false;
-  }
-}
+let pendingPhoneConfirm = false; // true right after ZYROS asks "should I send this to your phone?"
+let voiceInitiatedSend = false;  // true when the pending Telegram send was triggered by voice, not the SEND button
 
 function pushTalkLog(kind, msg){
   const time = new Date().toLocaleTimeString('en-US',{hour12:false});
@@ -2351,15 +2370,9 @@ function toggleTalkMic(mode){
   startTalkMic(mode);
 }
 
-async function startTalkMic(mode){
+function startTalkMic(mode){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SR){ showToast('Speech recognition needs Chrome / supported browser'); return; }
-
-  // Ask for mic access only the first time — cached after that, so this
-  // never shows a second browser permission prompt.
-  const granted = await ensureMicPermission();
-  if(!granted) return;
-
   talkMicBusy = true;
   talkSpeechId++;
   const micId = mode === 'cmd' ? 'cmd-mic' : 'ai-mic';
@@ -2437,13 +2450,29 @@ function matchRobotCommand(text){
   return null;
 }
 
+function cleanDestPhrase(s){
+  return s.trim()
+    .replace(/\?$/, '')
+    .replace(/\bfrom here\b/i, '')
+    .replace(/\bright now\b/i, '')
+    .replace(/\bplease\b/i, '')
+    .replace(/[.,]+$/, '')
+    .trim();
+}
+
 function extractDestination(text){
   // Only when phrase is clearly navigation — never return random leftover text
-  let m = text.match(/(?:how far is|how far to|how long (?:will it take )?to(?: get to)?|how much time (?:to get )?to|distance to|eta to|route to|directions? to|navigate to|way to|drive to|take me to)\s+(.+?)(?:\?|$)/i);
-  if(m) return m[1].trim().replace(/\?$/,'').replace(/\bfrom here\b/i,'').trim();
-  if(/\b(how far|how long|route to|directions? to|navigate to|drive to)\b/i.test(text)){
-    m = text.match(/(navi mumbai(?:\s+international)?(?:\s+airport)?|mumbai(?:\s+international)?(?:\s+airport)?|thane(?:\s+creek)?|palm beach(?:\s+road)?)/i);
-    if(m) return m[1].trim();
+  const t = text.trim();
+
+  // Primary: "how far is X", "route to X", "navigate to X", "take me to X", "map to X", etc.
+  let m = t.match(/(?:how far is|how far to|how long (?:will it take )?to(?: get to)?|how much time (?:to get )?to|distance to|eta to|route to|directions? to|navigate to|way to|drive to|take me to|map to|show (?:me )?(?:the )?(?:route|directions|map) to)\s+(.+?)(?:\?|$)/i);
+  if(m) return cleanDestPhrase(m[1]);
+
+  // Fallback: any other clearly-navigational phrasing — grab whatever follows "to"/"for"
+  // instead of only matching a hardcoded list of place names, so ANY destination works.
+  if(isNavQuery(t)){
+    m = t.match(/\b(?:to|for)\s+(.+?)(?:\?|$)/i);
+    if(m) return cleanDestPhrase(m[1]);
   }
   return '';
 }
@@ -2490,22 +2519,38 @@ async function ensureGps(){
   });
 }
 
+// Free routing engines (OSRM) compute free-flow time with NO real traffic data —
+// on Indian city roads actual drive time typically runs 30-60% longer than that.
+// This factor corrects for that so the spoken ETA is closer to reality. It's still
+// an estimate, not live traffic, but far closer than the raw free-flow number.
+const TRAFFIC_FACTOR = 1.45;
+
 async function runNavigationFlow(text, destHint){
   await ensureGps();
-  let dest = destHint || extractDestination(text) || 'Mumbai Airport';
-  dest = dest.replace(/\?$/,'').trim();
-  if(!dest) dest = 'Mumbai Airport';
+  const dest = cleanDestPhrase(destHint || extractDestination(text) || '');
+  if(!dest){
+    const e = new Error('destination not understood');
+    e.code = 'NO_DEST';
+    throw e;
+  }
+
+  // Snapshot the origin NOW. Switching to the Maps page below triggers its own
+  // background GPS refresh — without this snapshot that refresh can land mid-flight
+  // and make the distance/ETA calc use different coordinates than the ones the
+  // route embed/link were built from, producing a wrong distance and time.
+  const originLat = mapsHome.lat, originLon = mapsHome.lon;
 
   const toInput = document.getElementById('maps-to');
   if(toInput) toInput.value = dest;
   const fromInput = document.getElementById('maps-from');
   if(fromInput) fromInput.value = 'Current location';
 
-  const origin = mapsHome.lat + ',' + mapsHome.lon;
+  const origin = originLat + ',' + originLon;
   const embed = buildGoogleDirEmbed(origin, dest);
   const link = buildGoogleDirLink(origin, dest);
   setGmapsSrc(embed);
   mapsLastDirUrl = link;
+  mapsRouteActive = true;
 
   // Open Maps only — no Talk overlay left behind
   switchToPage('page-maps');
@@ -2518,12 +2563,12 @@ async function runNavigationFlow(text, destHint){
     const geo = await geoRes.json();
     if(geo && geo[0]){
       const tlat = parseFloat(geo[0].lat), tlon = parseFloat(geo[0].lon);
-      const rr = await fetch(`https://router.project-osrm.org/route/v1/driving/${mapsHome.lon},${mapsHome.lat};${tlon},${tlat}?overview=false&steps=true`);
+      const rr = await fetch(`https://router.project-osrm.org/route/v1/driving/${originLon},${originLat};${tlon},${tlat}?overview=false&steps=true`);
       const jj = await rr.json();
       if(jj.code === 'Ok' && jj.routes?.[0]){
         const route = jj.routes[0];
         distKm = (route.distance / 1000).toFixed(1);
-        const durMin = Math.round(route.duration / 60);
+        const durMin = Math.round((route.duration / 60) * TRAFFIC_FACTOR);
         const hours = Math.floor(durMin / 60);
         const mins = durMin % 60;
         timeStr = hours > 0 ? `${hours} hours ${mins} minutes` : `${mins} minutes`;
@@ -2539,10 +2584,10 @@ async function runNavigationFlow(text, destHint){
   let answer = '';
   if(/road|which way|which road|path/i.test(lower)){
     answer = roads.length
-      ? `Follow ${roads.slice(0, 4).join(', then ')}. About ${timeStr}` + (distKm ? `, ${distKm} km` : '') + '. Route is open on Maps.'
+      ? `Follow ${roads.slice(0, 4).join(', then ')}. About ${timeStr} with traffic` + (distKm ? `, ${distKm} km` : '') + '. Route is open on Maps.'
       : `Route to ${dest} is open on the Maps page with live Google directions.`;
   } else {
-    answer = `About ${timeStr} to ${dest}` + (distKm ? ` (${distKm} km)` : '') + '. Google Maps route is open on the Maps page.';
+    answer = `About ${timeStr} to ${dest} with typical traffic` + (distKm ? ` (${distKm} km)` : '') + '. Google Maps route is open on the Maps page.';
   }
 
   mapsLastRouteText = answer;
@@ -2750,14 +2795,17 @@ async function handleTalkAI(text){
   }
 }
 
-function speakText(text){
-  if(!talkSpeakEnabled) return;
-  if(!window.speechSynthesis) return;
+let zyrosSpeaking = false;
+function speakText(text, onend){
+  if(!talkSpeakEnabled || !window.speechSynthesis){ if(onend) onend(); return; }
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-IN';
   u.rate = 1.0;
   u.pitch = 0.95;
+  u.onstart = () => { zyrosSpeaking = true; };
+  u.onend = () => { zyrosSpeaking = false; if(onend) onend(); };
+  u.onerror = () => { zyrosSpeaking = false; if(onend) onend(); };
   window.speechSynthesis.speak(u);
 }
 
