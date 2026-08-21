@@ -2681,7 +2681,7 @@ async function handleTalkAI(text){
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: 'You are ZYROS, a futuristic robot. Answer navigation and general questions concisely in plain spoken English. Use any provided context about previous routes. No markdown.' },
           ...mapsConversationCtx.filter(c => c.role === 'user' || c.role === 'assistant').map(c => ({ role: c.role, content: c.text })),
