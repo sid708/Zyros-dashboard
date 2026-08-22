@@ -2345,7 +2345,7 @@ function sendTypedAI(){
 
 function stopAllSpeech(){
   talkSpeechId++;
-  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  if(ws && isConnected) sendCmd('STOP');
   stopTalkMic();
   setTalkModeChip('STANDBY');
   showToast('Speech stopped');
@@ -2797,16 +2797,13 @@ async function handleTalkAI(text){
 
 let zyrosSpeaking = false;
 function speakText(text, onend){
-  if(!talkSpeakEnabled || !window.speechSynthesis){ if(onend) onend(); return; }
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-IN';
-  u.rate = 1.0;
-  u.pitch = 0.95;
-  u.onstart = () => { zyrosSpeaking = true; };
-  u.onend = () => { zyrosSpeaking = false; if(onend) onend(); };
-  u.onerror = () => { zyrosSpeaking = false; if(onend) onend(); };
-  window.speechSynthesis.speak(u);
+  if(!talkSpeakEnabled || !text){ if(onend) onend(); return; }
+  if(ws && isConnected){
+    ws.send(JSON.stringify({type:'speak_text', text}));
+  } else {
+    showToast('Not connected — cannot speak on robot speaker');
+  }
+  if(onend) onend();
 }
 
 // Also surface Pi AI replies on Talk page
